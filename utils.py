@@ -4,6 +4,27 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def translate_weather(weather_desc):
+    """날씨 설명을 한글로 변환"""
+    weather_map = {
+        'Clear': '맑음',
+        'Clouds': '흐림',
+        'Rain': '비',
+        'Drizzle': '이슬비',
+        'Thunderstorm': '뇌우',
+        'Snow': '눈',
+        'Mist': '안개',
+        'Smoke': '연무',
+        'Haze': '실안개',
+        'Dust': '먼지',
+        'Fog': '짙은 안개',
+        'Sand': '황사',
+        'Ash': '화산재',
+        'Squall': '돌풍',
+        'Tornado': '토네이도'
+    }
+    return weather_map.get(weather_desc, weather_desc)
+
 def get_travel_info(city_name, base_currency):
     # 초기화
     result = {'rate_display': 0, 'rate_calc': 0, 'temp': 0, 'weather_desc': '', 'update_time': ''}
@@ -42,13 +63,14 @@ def get_travel_info(city_name, base_currency):
         
         if w_data.get('main'):
             result['temp'] = round(w_data['main']['temp'])
-            # [핵심] 이 부분을 추가해야 'Clear', 'Rain', 'Clouds' 등이 전달됩니다.
-            result['weather_desc'] = w_data['weather'][0]['main'] 
+            # 날씨 설명을 한글로 변환
+            weather_main = w_data['weather'][0]['main']
+            result['weather_desc'] = translate_weather(weather_main)
         else:
             result['temp'] = "N/A"
-            result['weather_desc'] = "Unknown"
+            result['weather_desc'] = "정보 없음"
     except:
         result['temp'] = "N/A"
-        result['weather_desc'] = "Error"
+        result['weather_desc'] = "오류"
 
     return result

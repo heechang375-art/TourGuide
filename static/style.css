@@ -1,4 +1,4 @@
-/* 전체 레이아웃 */
+/* Global Layout */
 body { 
     margin: 0; 
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -6,14 +6,14 @@ body {
     padding-bottom: 60px; 
 }
 
-/* 헤더 영역 */
+/* Header Area */
 .app-header { 
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 20px; 
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
-/* 날씨 + 환율 카드 */
+/* Weather + Exchange Rate Cards */
 .info-cards {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -76,7 +76,7 @@ body {
     color: #888;
 }
 
-/* 국가 선택 */
+/* Country Selector */
 .country-selector-wrapper {
     margin-bottom: 16px;
 }
@@ -107,7 +107,7 @@ body {
     cursor: pointer;
 }
 
-/* 언어 선택 (버튼 그리드) */
+/* Language Selector (Button Grid) */
 .lang-selector-wrapper {
     margin-bottom: 12px;
 }
@@ -139,7 +139,7 @@ body {
     border-color: white;
 }
 
-/* 탭 네비게이션 */
+/* Tab Navigation */
 .mobile-tabs { 
     display: flex; 
     background: white;
@@ -181,7 +181,7 @@ body {
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* 카드 */
+/* Cards */
 .card { 
     background: white;
     border-radius: 20px; 
@@ -204,7 +204,7 @@ body {
     font-size: 20px;
 }
 
-/* 번역기 */
+/* Translator */
 .trans-input { 
     width: 100%; 
     min-height: 120px; 
@@ -273,7 +273,7 @@ body {
     transform: scale(0.97);
 }
 
-/* 팁 & 주의사항 섹션 */
+/* Tips & Warnings Section */
 .tip-section,
 .warning-section {
     margin-bottom: 20px;
@@ -309,7 +309,7 @@ body {
     line-height: 1.6;
 }
 
-/* 앱 다운로드 (새 디자인) */
+/* App Download (Modern Design) */
 .app-item-modern {
     display: flex;
     align-items: center;
@@ -374,7 +374,7 @@ body {
     box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
 }
 
-/* 쇼핑 그리드 */
+/* Shopping Grid */
 .shopping-grid { 
     display: grid; 
     grid-template-columns: 1fr 1fr; 
@@ -413,7 +413,7 @@ body {
     line-height: 1.4;
 }
 
-/* 회화 카드 */
+/* Phrase Cards */
 .phrase-card { 
     margin: 16px;
     background: white;
@@ -454,7 +454,7 @@ body {
     font-weight: 500;
 }
 
-/* 환율 계산기 */
+/* Exchange Rate Calculator */
 .calc-box-improved { 
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     padding: 20px;
@@ -545,7 +545,7 @@ body {
     color: #d39e00;
 }
 
-/* 체크리스트 */
+/* Checklist */
 .checklist-category { 
     margin-bottom: 24px;
 }
@@ -586,7 +586,7 @@ body {
     cursor: pointer;
 }
 
-/* 콘텐츠 영역 */
+/* Content Area */
 .content-area {
     background: #f5f7fa;
     min-height: calc(100vh - 400px);

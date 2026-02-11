@@ -21,29 +21,32 @@
     
     <style>
         .header-top { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #fff; }
-        #google_translate_element { display: block !important; }
+        #google_translate_element { display: none !important; }
         
-        /* 언어 선택 드롭다운 (파란색) */
+        /* 언어 선택 드롭다운 */
         .lang-blue-selector {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             margin-top: 10px;
             background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
             font-weight: bold;
             text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
         }
 
-        /* 환율 계산기 UI (시원한 크기 유지) */
+        /* 환율 계산기 UI */
         .calc-box-improved { padding: 20px; background: #f8f9fa; border-radius: 12px; }
         .calc-row { display: flex; align-items: center; margin-bottom: 15px; background: white; padding: 12px 15px; border-radius: 8px; border: 1px solid #ddd; }
         .currency-label { width: 70px; font-weight: bold; color: #333; font-size: 1.1rem; }
         .calc-input, .calc-output { flex: 1; border: none; font-size: 1.3rem; font-weight: bold; text-align: right; outline: none; }
+        .calc-btn { width: 100%; padding: 15px; background: #007AFF; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; margin-top: 10px; }
+        .calc-btn:active { background: #0056b3; }
 
-        /* 쇼핑 그리드 (이미지 검색 버튼 스타일) */
+        /* 쇼핑 그리드 */
         .shopping-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .shop-item { 
             display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -53,6 +56,15 @@
         }
         .shop-item i { color: #007bff; font-size: 0.8rem; }
 
+        /* 모바일 최적화 */
+        .mobile-tabs { position: sticky; top: 0; background: #fff; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .tab-btn { padding: 16px 0; font-size: 14px; transition: all 0.2s; }
+        .tab-btn:active { background: #f0f0f0; }
+        
+        .card { margin: 12px; padding: 18px; border-radius: 16px; }
+        .trans-input { font-size: 15px; padding: 12px; }
+        .phrase-card { margin: 12px; padding: 16px; }
+
         body { top: 0 !important; }
         .skiptranslate, .goog-te-banner-frame, #goog-gt-tt { display: none !important; }
         font { background-color: transparent !important; box-shadow: none !important; }
@@ -60,20 +72,20 @@
 </head>
 <body>
     <header class="app-header">
-        <div class="header-top">
-            <div class="weather-badge"><i class="fa-solid fa-cloud-sun"></i> {{ info.city }} {{ info.temp }}°C</div>
-            <div id="google_translate_element"></div>
-        </div>
-
-        <div class="rate-display-section">
-            {% if info.currency in ['JPY', 'VND'] %}
-                <div class="rate-big">{{ (info.rate_calc * 100) | round(2) }}</div>
-                <div class="rate-sub">100 {{ info.currency }} = {{ (info.rate_calc * 100) | round(2) }} KRW</div>
-            {% else %}
-                <div class="rate-big">{{ info.rate_display }}</div>
-                <div class="rate-sub">1 {{ info.currency }} = {{ info.rate_display }} KRW</div>
-            {% endif %}
-            <div class="rate-time">한국시간 09:00 기준</div>
+        <div class="header-top-info">
+            <div class="weather-badge">
+                <i class="fa-solid fa-cloud-sun"></i> 
+                {{ info.city }} {{ info.temp }}°C
+            </div>
+            <div class="rate-compact" id="rateDisplay">
+                {% if info.currency in ['JPY', 'VND'] %}
+                    <div class="rate-compact-main">{{ (info.rate_calc * 100) | round(2) }}원</div>
+                    <div class="rate-compact-sub">100 {{ info.currency }}</div>
+                {% else %}
+                    <div class="rate-compact-main">{{ info.rate_display }}원</div>
+                    <div class="rate-compact-sub">1 {{ info.currency }}</div>
+                {% endif %}
+            </div>
         </div>
 
         <div class="selection-area">
@@ -112,7 +124,7 @@
                     <textarea id="sourceText" class="trans-input" placeholder="번역할 내용을 입력하세요..."></textarea>
                     <div id="transResult" class="trans-output-box" style="display:none;"></div>
                     <div class="trans-btn-grid">
-                        <button type="button" onclick="translateAction('target')" class="btn-primary">현지어로</button>
+                        <button type="button" onclick="translateAction('target')" class="btn-primary" id="targetLangBtn">현지어로</button>
                         <button type="button" onclick="translateAction('ko')" class="btn-success">한국어로</button>
                     </div>
                 </div>
@@ -129,7 +141,11 @@
                 {% for app in info.apps %}
                 <div class="app-item-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee;">
                     <div class="app-info"><strong>{{ app.name }}</strong><br><small style="color: #666;">{{ app.desc }}</small></div>
-                    <a href="{{ app.link }}" target="_blank" style="color: #007bff; font-size: 1.5rem;"><i class="fa-solid fa-circle-arrow-down"></i></a>
+                    {% if 'play.google.com' in app.link %}
+                        <a href="market://details?id={{ app.link.split('id=')[1] }}" style="color: #007bff; font-size: 1.5rem;"><i class="fa-solid fa-circle-arrow-down"></i></a>
+                    {% else %}
+                        <a href="{{ app.link }}" target="_blank" style="color: #007bff; font-size: 1.5rem;"><i class="fa-solid fa-external-link-alt"></i></a>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -164,12 +180,16 @@
                 <h3>🔢 환율 계산기</h3>
                 <div class="calc-box-improved">
                     <div class="calc-row">
-                        <span class="currency-label">{{ info.currency }}</span>
-                        <input type="number" id="foreignInput" class="calc-input" placeholder="0">
+                        <span class="currency-label" id="currencyLabel">{{ info.currency }}</span>
+                        <input type="number" id="foreignInput" class="calc-input" placeholder="0" step="any">
                     </div>
                     <div class="calc-row">
                         <span class="currency-label">KRW</span>
                         <input type="text" id="krwOutput" class="calc-output" readonly placeholder="0">
+                    </div>
+                    <button class="calc-btn" onclick="calculateExchange()">💱 환율 계산하기</button>
+                    <div class="calc-unit-info" id="unitInfo" style="display:none;">
+                        <strong>💰 환전 가능 단위:</strong> <span id="unitText"></span>
                     </div>
                 </div>
             </div>
@@ -194,15 +214,81 @@
             'hochiminh':'vi', 'bangkok':'th', 'taipei':'zh-TW', 
             'hongkong':'zh-TW', 'nyc':'en', 'seoul':'ko'
         };
+        
         let currentTargetLang = cityLangMap["{{ selected_id }}"] || 'ko';
+        let userSelectedLang = null;
+        let currentCurrency = "{{ info.currency }}";
+        let currentRate = parseFloat("{{ info.rate_calc }}");
 
         function forceTranslateUI(langCode) {
             if(!langCode) return;
+            userSelectedLang = langCode;
+            
+            // 서울이고 한국어가 아닌 다른 언어를 선택했을 때 역환율 표시
+            if ("{{ selected_id }}" === "seoul" && langCode !== "ko") {
+                updateReverseRate(langCode);
+            } else {
+                // 원래 환율로 복원
+                restoreOriginalRate();
+            }
+            
             document.cookie = `googtrans=/ko/${langCode}; path=/`;
             document.cookie = `googtrans=/ko/${langCode}; domain=${location.hostname}; path=/`;
             const baseUrl = window.location.href.split('#')[0];
             window.location.href = baseUrl + '#googtrans(ko|' + langCode + ')';
             location.reload();
+        }
+
+        function updateReverseRate(langCode) {
+            // 언어별 통화 매핑
+            const langToCurrency = {
+                'ja': { code: 'JPY', name: '엔' },
+                'vi': { code: 'VND', name: '동' },
+                'th': { code: 'THB', name: '바트' },
+                'zh-CN': { code: 'CNY', name: '위안' },
+                'zh-TW': { code: 'TWD', name: '달러' },
+                'en': { code: 'USD', name: '달러' }
+            };
+            
+            const targetCurrency = langToCurrency[langCode];
+            if (!targetCurrency) return;
+            
+            // 역환율 계산을 위해 해당 통화의 환율 가져오기
+            fetch(`https://open.er-api.com/v6/latest/KRW`)
+                .then(res => res.json())
+                .then(data => {
+                    const reverseRate = data.rates[targetCurrency.code];
+                    const rateDisplay = document.getElementById('rateDisplay');
+                    
+                    if (targetCurrency.code === 'JPY' || targetCurrency.code === 'VND') {
+                        const rate100 = (reverseRate * 100).toFixed(2);
+                        rateDisplay.innerHTML = `
+                            <div class="rate-compact-main">${rate100} ${targetCurrency.name}</div>
+                            <div class="rate-compact-sub">1000 KRW</div>
+                        `;
+                    } else {
+                        rateDisplay.innerHTML = `
+                            <div class="rate-compact-main">${reverseRate.toFixed(2)} ${targetCurrency.name}</div>
+                            <div class="rate-compact-sub">1000 KRW</div>
+                        `;
+                    }
+                })
+                .catch(err => console.error('환율 조회 실패:', err));
+        }
+
+        function restoreOriginalRate() {
+            const rateDisplay = document.getElementById('rateDisplay');
+            {% if info.currency in ['JPY', 'VND'] %}
+                rateDisplay.innerHTML = `
+                    <div class="rate-compact-main">{{ (info.rate_calc * 100) | round(2) }}원</div>
+                    <div class="rate-compact-sub">100 {{ info.currency }}</div>
+                `;
+            {% else %}
+                rateDisplay.innerHTML = `
+                    <div class="rate-compact-main">{{ info.rate_display }}원</div>
+                    <div class="rate-compact-sub">1 {{ info.currency }}</div>
+                `;
+            {% endif %}
         }
 
         function changeCity(cityId) {
@@ -211,28 +297,112 @@
             window.location.href = '/?country=' + cityId;
         }
 
+        function roundToUnit(value, unit) {
+            return Math.round(value / unit) * unit;
+        }
+
+        function calculateExchange() {
+            const foreignInput = document.getElementById('foreignInput');
+            const krwOutput = document.getElementById('krwOutput');
+            let val = parseFloat(foreignInput.value);
+            
+            if (!val || isNaN(val)) {
+                alert('금액을 입력해주세요.');
+                return;
+            }
+
+            // JPY, VND는 100단위로 자동 반올림
+            if (currentCurrency === 'VND' || currentCurrency === 'JPY') {
+                const rounded = roundToUnit(val, 100);
+                if (rounded !== val) {
+                    foreignInput.value = rounded;
+                    val = rounded;
+                    alert(`${currentCurrency}는 100단위로만 환전 가능합니다.\n${rounded}으로 조정되었습니다.`);
+                }
+            }
+
+            // 원화 계산
+            const krwAmount = Math.round(val * currentRate);
+            krwOutput.value = krwAmount.toLocaleString() + " 원";
+        }
+
         window.onload = function() {
-            const rateVal = parseFloat("{{ info.rate_calc }}");
-            document.getElementById('foreignInput')?.addEventListener('input', (e) => {
-                const val = e.target.value;
-                document.getElementById('krwOutput').value = val ? Math.round(val * rateVal).toLocaleString() + " 원" : '';
-            });
+            // 환전 단위 안내 표시
+            if (currentCurrency === 'VND' || currentCurrency === 'JPY') {
+                const unitInfo = document.getElementById('unitInfo');
+                const unitText = document.getElementById('unitText');
+                const unitName = currentCurrency === 'VND' ? '동' : '엔';
+                unitText.innerText = `100${unitName} 단위로 환전 가능`;
+                unitInfo.style.display = 'block';
+            }
+
+            // 쿠키에서 현재 언어 확인
             const match = document.cookie.match(/googtrans=\/ko\/([^;]+)/);
-            if (match) { document.getElementById('customLangSelect').value = match[1]; }
+            if (match) { 
+                userSelectedLang = match[1];
+                document.getElementById('customLangSelect').value = match[1];
+                
+                // 서울이고 한국어가 아니면 역환율 표시
+                if ("{{ selected_id }}" === "seoul" && match[1] !== "ko") {
+                    updateReverseRate(match[1]);
+                }
+            }
+            
+            // 버튼 텍스트 업데이트
+            updateTargetButton();
+
+            // Enter 키로 계산
+            document.getElementById('foreignInput')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    calculateExchange();
+                }
+            });
         };
 
         function translateAction(mode) {
             const text = document.getElementById('sourceText').value;
-            if(!text) return;
-            let lang = (mode === 'target') ? currentTargetLang : 'ko';
-            fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`)
+            if(!text) {
+                alert('번역할 내용을 입력해주세요.');
+                return;
+            }
+            
+            let targetLang;
+            if (mode === 'target') {
+                // 현지어로 버튼 클릭
+                targetLang = userSelectedLang || currentTargetLang;
+            } else {
+                // 한국어로 버튼 클릭
+                targetLang = 'ko';
+            }
+            
+            fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`)
             .then(res => res.json()).then(data => {
                 const rb = document.getElementById('transResult');
                 if (data && data[0] && data[0][0][0]) { 
                     rb.innerText = data[0][0][0]; 
                     rb.style.display = 'block'; 
                 }
+            }).catch(err => {
+                console.error('Translation error:', err);
+                alert('번역 중 오류가 발생했습니다.');
             });
+        }
+
+        function updateTargetButton() {
+            const btn = document.getElementById('targetLangBtn');
+            const langNames = {
+                'ko': '한국어',
+                'ja': '일본어',
+                'vi': '베트남어',
+                'th': '태국어',
+                'zh-CN': '중국어',
+                'zh-TW': '중국어',
+                'en': '영어'
+            };
+            
+            const targetLang = userSelectedLang || currentTargetLang;
+            const langName = langNames[targetLang] || '현지어';
+            btn.innerText = `${langName}로`;
         }
 
         function showTab(event, id) {

@@ -20,51 +20,7 @@
     <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     
     <style>
-        .header-top { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #fff; }
         #google_translate_element { display: none !important; }
-        
-        /* 언어 선택 드롭다운 */
-        .lang-blue-selector {
-            width: 100%;
-            padding: 14px;
-            margin-top: 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
-        }
-
-        /* 환율 계산기 UI */
-        .calc-box-improved { padding: 20px; background: #f8f9fa; border-radius: 12px; }
-        .calc-row { display: flex; align-items: center; margin-bottom: 15px; background: white; padding: 12px 15px; border-radius: 8px; border: 1px solid #ddd; }
-        .currency-label { width: 70px; font-weight: bold; color: #333; font-size: 1.1rem; }
-        .calc-input, .calc-output { flex: 1; border: none; font-size: 1.3rem; font-weight: bold; text-align: right; outline: none; }
-        .calc-btn { width: 100%; padding: 15px; background: #007AFF; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; margin-top: 10px; }
-        .calc-btn:active { background: #0056b3; }
-
-        /* 쇼핑 그리드 */
-        .shopping-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .shop-item { 
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            padding: 15px 10px; background: #fff; border: 1px solid #eee; border-radius: 10px;
-            text-decoration: none; color: #333; font-weight: 500; font-size: 0.95rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .shop-item i { color: #007bff; font-size: 0.8rem; }
-
-        /* 모바일 최적화 */
-        .mobile-tabs { position: sticky; top: 0; background: #fff; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .tab-btn { padding: 16px 0; font-size: 14px; transition: all 0.2s; }
-        .tab-btn:active { background: #f0f0f0; }
-        
-        .card { margin: 12px; padding: 18px; border-radius: 16px; }
-        .trans-input { font-size: 15px; padding: 12px; }
-        .phrase-card { margin: 12px; padding: 16px; }
-
         body { top: 0 !important; }
         .skiptranslate, .goog-te-banner-frame, #goog-gt-tt { display: none !important; }
         font { background-color: transparent !important; box-shadow: none !important; }
@@ -72,48 +28,89 @@
 </head>
 <body>
     <header class="app-header">
-        <div class="header-top-info">
-            <div class="weather-badge">
-                <i class="fa-solid fa-cloud-sun"></i> 
-                {{ info.city }} {{ info.temp }}°C
+        <!-- 날씨 + 환율 카드형 -->
+        <div class="info-cards">
+            <div class="info-card weather-card">
+                <div class="info-icon">
+                    <i class="fa-solid fa-cloud-sun"></i>
+                </div>
+                <div class="info-content">
+                    <div class="info-label">현지 날씨</div>
+                    <div class="info-value">{{ info.city }} {{ info.temp }}°C</div>
+                    <div class="info-sub">{{ info.weather_desc }}</div>
+                </div>
             </div>
-            <div class="rate-compact" id="rateDisplay">
-                {% if info.currency in ['JPY', 'VND'] %}
-                    <div class="rate-compact-main">{{ (info.rate_calc * 100) | round(2) }}원</div>
-                    <div class="rate-compact-sub">100 {{ info.currency }}</div>
-                {% else %}
-                    <div class="rate-compact-main">{{ info.rate_display }}원</div>
-                    <div class="rate-compact-sub">1 {{ info.currency }}</div>
-                {% endif %}
+            
+            <div class="info-card rate-card">
+                <div class="info-icon">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+                <div class="info-content">
+                    <div class="info-label">환율</div>
+                    <div class="info-value" id="rateDisplay">
+                        {% if info.currency in ['JPY', 'VND'] %}
+                            {{ (info.rate_calc * 100) | round(2) }}원
+                        {% else %}
+                            {{ info.rate_display }}원
+                        {% endif %}
+                    </div>
+                    <div class="info-sub">
+                        {% if info.currency in ['JPY', 'VND'] %}
+                            100 {{ info.currency }}
+                        {% else %}
+                            1 {{ info.currency }}
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="selection-area">
-            <select class="main-selector" onchange="changeCity(this.value)">
+        <!-- 국가 선택 (국기 이모지 포함) -->
+        <div class="country-selector-wrapper">
+            <label class="selector-label">🌏 여행지 선택</label>
+            <select class="country-selector" onchange="changeCity(this.value)">
                 {% for id, c in countries.items() %}
                 <option value="{{ id }}" {% if id == selected_id %}selected{% endif %}>{{ c.name }}</option>
                 {% endfor %}
             </select>
+        </div>
 
-            <select id="customLangSelect" class="lang-blue-selector notranslate" onchange="forceTranslateUI(this.value)">
-                <option value="">언어 선택 (Language)</option>
-                <option value="ko">한국어 (KR)</option>
-                <option value="ja">일본어 (JP)</option>
-                <option value="vi">베트남어 (VN)</option>
-                <option value="th">태국어 (TH)</option>
-                <option value="zh-CN">중국어 간체 (CN)</option>
-                <option value="zh-TW">중국어 번체 (HK)</option>
-                <option value="en">영어 (US)</option>
-            </select>
+        <!-- 언어 선택 (버튼 그리드) -->
+        <div class="lang-selector-wrapper">
+            <label class="selector-label">🗣️ 언어 선택</label>
+            <div class="lang-grid" id="customLangSelect">
+                <button class="lang-btn" data-lang="ko">🇰🇷 한국어</button>
+                <button class="lang-btn" data-lang="ja">🇯🇵 日本語</button>
+                <button class="lang-btn" data-lang="vi">🇻🇳 Tiếng Việt</button>
+                <button class="lang-btn" data-lang="th">🇹🇭 ไทย</button>
+                <button class="lang-btn" data-lang="zh-CN">🇨🇳 简体中文</button>
+                <button class="lang-btn" data-lang="zh-TW">🇭🇰 繁體中文</button>
+                <button class="lang-btn" data-lang="en">🇺🇸 English</button>
+            </div>
         </div>
     </header>
 
     <nav class="mobile-tabs">
-        <button onclick="showTab(event, 'info')" class="tab-btn active">정보</button>
-        <button onclick="showTab(event, 'shopping')" class="tab-btn">쇼핑</button>
-        <button onclick="showTab(event, 'phrases')" class="tab-btn">회화</button>
-        <button onclick="showTab(event, 'calc')" class="tab-btn">환율</button>
-        <button onclick="showTab(event, 'todo')" class="tab-btn">체크</button>
+        <button onclick="showTab(event, 'info')" class="tab-btn active">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>정보</span>
+        </button>
+        <button onclick="showTab(event, 'shopping')" class="tab-btn">
+            <i class="fa-solid fa-bag-shopping"></i>
+            <span>쇼핑</span>
+        </button>
+        <button onclick="showTab(event, 'phrases')" class="tab-btn">
+            <i class="fa-solid fa-comments"></i>
+            <span>회화</span>
+        </button>
+        <button onclick="showTab(event, 'calc')" class="tab-btn">
+            <i class="fa-solid fa-calculator"></i>
+            <span>환율</span>
+        </button>
+        <button onclick="showTab(event, 'todo')" class="tab-btn">
+            <i class="fa-solid fa-list-check"></i>
+            <span>체크</span>
+        </button>
     </nav>
 
     <main class="content-area">
@@ -131,20 +128,38 @@
             </div>
             
             <div class="card">
-                <h3>💡 여행 꿀팁 & 주의사항</h3>
-                <ul class="data-list">{% for tip in info.tips %}<li>{{ tip }}</li>{% endfor %}</ul>
-                <ul class="data-list" style="color: #d9534f;">{% for warn in info.warnings %}<li>{{ warn }}</li>{% endfor %}</ul>
+                <h3><i class="fa-solid fa-lightbulb"></i> 여행 꿀팁 & 주의사항</h3>
+                <div class="tip-section">
+                    <div class="tip-header">✅ 꿀팁</div>
+                    <ul class="data-list">{% for tip in info.tips %}<li>{{ tip }}</li>{% endfor %}</ul>
+                </div>
+                <div class="warning-section">
+                    <div class="warning-header">⚠️ 주의사항</div>
+                    <ul class="data-list">{% for warn in info.warnings %}<li>{{ warn }}</li>{% endfor %}</ul>
+                </div>
             </div>
 
             <div class="card">
-                <h3>📱 필수 어플</h3>
+                <h3><i class="fa-solid fa-mobile-screen-button"></i> 필수 어플</h3>
                 {% for app in info.apps %}
-                <div class="app-item-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee;">
-                    <div class="app-info"><strong>{{ app.name }}</strong><br><small style="color: #666;">{{ app.desc }}</small></div>
+                <div class="app-item-modern">
+                    <div class="app-icon-wrapper">
+                        <i class="fa-solid fa-mobile-screen"></i>
+                    </div>
+                    <div class="app-info">
+                        <strong>{{ app.name }}</strong>
+                        <small>{{ app.desc }}</small>
+                    </div>
                     {% if 'play.google.com' in app.link %}
-                        <a href="market://details?id={{ app.link.split('id=')[1] }}" style="color: #007bff; font-size: 1.5rem;"><i class="fa-solid fa-circle-arrow-down"></i></a>
+                        <a href="market://details?id={{ app.link.split('id=')[1] }}" class="app-download-btn">
+                            <i class="fa-brands fa-google-play"></i>
+                            <span>다운로드</span>
+                        </a>
                     {% else %}
-                        <a href="{{ app.link }}" target="_blank" style="color: #007bff; font-size: 1.5rem;"><i class="fa-solid fa-external-link-alt"></i></a>
+                        <a href="{{ app.link }}" target="_blank" class="app-download-btn web-btn">
+                            <i class="fa-solid fa-globe"></i>
+                            <span>웹사이트</span>
+                        </a>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -153,11 +168,12 @@
 
         <div id="shopping" class="tab-content">
             <div class="card">
-                <h3>🛒 추천 쇼핑템</h3>
+                <h3><i class="fa-solid fa-cart-shopping"></i> 추천 쇼핑템</h3>
                 <div class="shopping-grid">
                     {% for item in info.shopping %}
                     <a href="https://www.google.com/search?q={{ info.city }}+{{ item }}&tbm=isch" target="_blank" class="shop-item">
-                        <i class="fa-solid fa-magnifying-glass"></i> {{ item }}
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>{{ item }}</span>
                     </a>
                     {% endfor %}
                 </div>
@@ -169,7 +185,10 @@
             <div class="phrase-card">
                 <div class="phrase-header">{{ cat }}</div>
                 {% for p in items %}
-                <div class="phrase-row"><p class="txt-ko">{{ p.ko }}</p><p class="txt-local">{{ p.local }}</p></div>
+                <div class="phrase-item">
+                    <p class="txt-ko">{{ p.ko }}</p>
+                    <p class="txt-local">{{ p.local }}</p>
+                </div>
                 {% endfor %}
             </div>
             {% endfor %}
@@ -177,31 +196,46 @@
 
         <div id="calc" class="tab-content">
             <div class="card">
-                <h3>🔢 환율 계산기</h3>
+                <h3><i class="fa-solid fa-money-bill-transfer"></i> 환율 계산기</h3>
                 <div class="calc-box-improved">
                     <div class="calc-row">
-                        <span class="currency-label" id="currencyLabel">{{ info.currency }}</span>
-                        <input type="number" id="foreignInput" class="calc-input" placeholder="0" step="any">
+                        <span class="currency-label">{{ info.currency }}</span>
+                        <input type="number" id="foreignInput" class="calc-input" placeholder="0" value="">
+                    </div>
+                    <div class="calc-arrow">
+                        <i class="fa-solid fa-arrow-down"></i>
                     </div>
                     <div class="calc-row">
                         <span class="currency-label">KRW</span>
-                        <input type="text" id="krwOutput" class="calc-output" readonly placeholder="0">
+                        <input type="text" id="krwOutput" class="calc-output" placeholder="0 원" readonly>
                     </div>
-                    <button class="calc-btn" onclick="calculateExchange()">💱 환율 계산하기</button>
-                    <div class="calc-unit-info" id="unitInfo" style="display:none;">
-                        <strong>💰 환전 가능 단위:</strong> <span id="unitText"></span>
+                    <button class="calc-btn" onclick="calculateExchange()">
+                        <i class="fa-solid fa-calculator"></i> 계산하기
+                    </button>
+                    {% if info.currency in ['JPY', 'VND'] %}
+                    <div id="unitInfo" class="calc-unit-info">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <strong>환전 단위 안내:</strong> 
+                        <span id="unitText">100{{ '엔' if info.currency == 'JPY' else '동' }} 단위로 환전 가능</span>
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
         <div id="todo" class="tab-content">
             <div class="card">
-                <h3>✅ 체크리스트</h3>
-                {% for cat, items in checklist.items() %}
-                <div class="todo-group">
-                    <h4>{{ cat }}</h4>
-                    {% for item in items %}<label style="display:block; margin:5px 0;"><input type="checkbox"> {{ item }}</label>{% endfor %}
+                <h3><i class="fa-solid fa-clipboard-check"></i> 여행 준비 체크리스트</h3>
+                
+                {% for category, items in checklist.items() %}
+                <div class="checklist-category">
+                    <h4>{{ category }}</h4>
+                    {% for item in items %}
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check_{{ loop.index0 }}_{{ loop.index }}">
+                        <label for="check_{{ loop.index0 }}_{{ loop.index }}">{{ item }}</label>
+                    </div>
+                    {% endfor %}
                 </div>
                 {% endfor %}
             </div>
@@ -209,38 +243,44 @@
     </main>
 
     <script>
-        const cityLangMap = {
-            'tokyo':'ja', 'osaka':'ja', 'fukuoka':'ja', 'danang':'vi', 
-            'hochiminh':'vi', 'bangkok':'th', 'taipei':'zh-TW', 
-            'hongkong':'zh-TW', 'nyc':'en', 'seoul':'ko'
-        };
-        
-        let currentTargetLang = cityLangMap["{{ selected_id }}"] || 'ko';
+        const currentRate = {{ info.rate_calc }};
+        const currentCurrency = "{{ info.currency }}";
+        const currentTargetLang = "{{ info.city|lower|replace(' ', '') }}";
         let userSelectedLang = null;
-        let currentCurrency = "{{ info.currency }}";
-        let currentRate = parseFloat("{{ info.rate_calc }}");
+
+        // 언어 버튼 클릭 이벤트
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const lang = this.dataset.lang;
+                forceTranslateUI(lang);
+            });
+        });
 
         function forceTranslateUI(langCode) {
-            if(!langCode) return;
+            if (!langCode) return;
+            
             userSelectedLang = langCode;
             
-            // 서울이고 한국어가 아닌 다른 언어를 선택했을 때 역환율 표시
+            const gtCombo = document.querySelector('.goog-te-combo');
+            if (gtCombo) {
+                gtCombo.value = langCode;
+                gtCombo.dispatchEvent(new Event('change'));
+            }
+            
+            document.cookie = `googtrans=/ko/${langCode}; path=/;`;
+            
             if ("{{ selected_id }}" === "seoul" && langCode !== "ko") {
                 updateReverseRate(langCode);
             } else {
-                // 원래 환율로 복원
                 restoreOriginalRate();
             }
             
-            document.cookie = `googtrans=/ko/${langCode}; path=/`;
-            document.cookie = `googtrans=/ko/${langCode}; domain=${location.hostname}; path=/`;
-            const baseUrl = window.location.href.split('#')[0];
-            window.location.href = baseUrl + '#googtrans(ko|' + langCode + ')';
-            location.reload();
+            updateTargetButton();
         }
 
         function updateReverseRate(langCode) {
-            // 언어별 통화 매핑
             const langToCurrency = {
                 'ja': { code: 'JPY', name: '엔' },
                 'vi': { code: 'VND', name: '동' },
@@ -253,7 +293,6 @@
             const targetCurrency = langToCurrency[langCode];
             if (!targetCurrency) return;
             
-            // 역환율 계산을 위해 해당 통화의 환율 가져오기
             fetch(`https://open.er-api.com/v6/latest/KRW`)
                 .then(res => res.json())
                 .then(data => {
@@ -262,15 +301,9 @@
                     
                     if (targetCurrency.code === 'JPY' || targetCurrency.code === 'VND') {
                         const rate100 = (reverseRate * 100).toFixed(2);
-                        rateDisplay.innerHTML = `
-                            <div class="rate-compact-main">${rate100} ${targetCurrency.name}</div>
-                            <div class="rate-compact-sub">1000 KRW</div>
-                        `;
+                        rateDisplay.innerHTML = `${rate100} ${targetCurrency.name}`;
                     } else {
-                        rateDisplay.innerHTML = `
-                            <div class="rate-compact-main">${reverseRate.toFixed(2)} ${targetCurrency.name}</div>
-                            <div class="rate-compact-sub">1000 KRW</div>
-                        `;
+                        rateDisplay.innerHTML = `${reverseRate.toFixed(2)} ${targetCurrency.name}`;
                     }
                 })
                 .catch(err => console.error('환율 조회 실패:', err));
@@ -279,15 +312,9 @@
         function restoreOriginalRate() {
             const rateDisplay = document.getElementById('rateDisplay');
             {% if info.currency in ['JPY', 'VND'] %}
-                rateDisplay.innerHTML = `
-                    <div class="rate-compact-main">{{ (info.rate_calc * 100) | round(2) }}원</div>
-                    <div class="rate-compact-sub">100 {{ info.currency }}</div>
-                `;
+                rateDisplay.innerHTML = `{{ (info.rate_calc * 100) | round(2) }}원`;
             {% else %}
-                rateDisplay.innerHTML = `
-                    <div class="rate-compact-main">{{ info.rate_display }}원</div>
-                    <div class="rate-compact-sub">1 {{ info.currency }}</div>
-                `;
+                rateDisplay.innerHTML = `{{ info.rate_display }}원`;
             {% endif %}
         }
 
@@ -311,7 +338,6 @@
                 return;
             }
 
-            // JPY, VND는 100단위로 자동 반올림
             if (currentCurrency === 'VND' || currentCurrency === 'JPY') {
                 const rounded = roundToUnit(val, 100);
                 if (rounded !== val) {
@@ -321,37 +347,27 @@
                 }
             }
 
-            // 원화 계산
             const krwAmount = Math.round(val * currentRate);
             krwOutput.value = krwAmount.toLocaleString() + " 원";
         }
 
         window.onload = function() {
-            // 환전 단위 안내 표시
-            if (currentCurrency === 'VND' || currentCurrency === 'JPY') {
-                const unitInfo = document.getElementById('unitInfo');
-                const unitText = document.getElementById('unitText');
-                const unitName = currentCurrency === 'VND' ? '동' : '엔';
-                unitText.innerText = `100${unitName} 단위로 환전 가능`;
-                unitInfo.style.display = 'block';
-            }
-
-            // 쿠키에서 현재 언어 확인
             const match = document.cookie.match(/googtrans=\/ko\/([^;]+)/);
             if (match) { 
                 userSelectedLang = match[1];
-                document.getElementById('customLangSelect').value = match[1];
+                document.querySelectorAll('.lang-btn').forEach(btn => {
+                    if (btn.dataset.lang === match[1]) {
+                        btn.classList.add('active');
+                    }
+                });
                 
-                // 서울이고 한국어가 아니면 역환율 표시
                 if ("{{ selected_id }}" === "seoul" && match[1] !== "ko") {
                     updateReverseRate(match[1]);
                 }
             }
             
-            // 버튼 텍스트 업데이트
             updateTargetButton();
 
-            // Enter 키로 계산
             document.getElementById('foreignInput')?.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     calculateExchange();
@@ -368,10 +384,8 @@
             
             let targetLang;
             if (mode === 'target') {
-                // 현지어로 버튼 클릭
                 targetLang = userSelectedLang || currentTargetLang;
             } else {
-                // 한국어로 버튼 클릭
                 targetLang = 'ko';
             }
             

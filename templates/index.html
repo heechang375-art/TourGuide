@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Global Travel Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'ko',
+                includedLanguages: 'ko,ja,vi,th,zh-CN,zh-TW,en',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
+    <style>
+        .header-top { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #fff; }
+        #google_translate_element { display: block !important; }
+        
+        /* 언어 선택 드롭다운 (파란색) */
+        .lang-blue-selector {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* 환율 계산기 UI (시원한 크기 유지) */
+        .calc-box-improved { padding: 20px; background: #f8f9fa; border-radius: 12px; }
+        .calc-row { display: flex; align-items: center; margin-bottom: 15px; background: white; padding: 12px 15px; border-radius: 8px; border: 1px solid #ddd; }
+        .currency-label { width: 70px; font-weight: bold; color: #333; font-size: 1.1rem; }
+        .calc-input, .calc-output { flex: 1; border: none; font-size: 1.3rem; font-weight: bold; text-align: right; outline: none; }
+
+        /* 쇼핑 그리드 (이미지 검색 버튼 스타일) */
+        .shopping-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .shop-item { 
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 15px 10px; background: #fff; border: 1px solid #eee; border-radius: 10px;
+            text-decoration: none; color: #333; font-weight: 500; font-size: 0.95rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .shop-item i { color: #007bff; font-size: 0.8rem; }
+
+        body { top: 0 !important; }
+        .skiptranslate, .goog-te-banner-frame, #goog-gt-tt { display: none !important; }
+        font { background-color: transparent !important; box-shadow: none !important; }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-top">
+            <div class="weather-badge"><i class="fa-solid fa-cloud-sun"></i> {{ info.city }} {{ info.temp }}°C</div>
+            <div id="google_translate_element"></div>
+        </div>
+
+        <div class="rate-display-section">
+            {% if info.currency in ['JPY', 'VND'] %}
+                <div class="rate-big">{{ (info.rate_calc * 100) | round(2) }}</div>
+                <div class="rate-sub">100 {{ info.currency }} = {{ (info.rate_calc * 100) | round(2) }} KRW</div>
+            {% else %}
+                <div class="rate-big">{{ info.rate_display }}</div>
+                <div class="rate-sub">1 {{ info.currency }} = {{ info.rate_display }} KRW</div>
+            {% endif %}
+            <div class="rate-time">한국시간 09:00 기준</div>
+        </div>
+
+        <div class="selection-area">
+            <select class="main-selector" onchange="changeCity(this.value)">
+                {% for id, c in countries.items() %}
+                <option value="{{ id }}" {% if id == selected_id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="customLangSelect" class="lang-blue-selector notranslate" onchange="forceTranslateUI(this.value)">
+                <option value="">언어 선택 (Language)</option>
+                <option value="ko">한국어 (KR)</option>
+                <option value="ja">일본어 (JP)</option>
+                <option value="vi">베트남어 (VN)</option>
+                <option value="th">태국어 (TH)</option>
+                <option value="zh-CN">중국어 간체 (CN)</option>
+                <option value="zh-TW">중국어 번체 (HK)</option>
+                <option value="en">영어 (US)</option>
+            </select>
+        </div>
+    </header>
+
+    <nav class="mobile-tabs">
+        <button onclick="showTab(event, 'info')" class="tab-btn active">정보</button>
+        <button onclick="showTab(event, 'shopping')" class="tab-btn">쇼핑</button>
+        <button onclick="showTab(event, 'phrases')" class="tab-btn">회화</button>
+        <button onclick="showTab(event, 'calc')" class="tab-btn">환율</button>
+        <button onclick="showTab(event, 'todo')" class="tab-btn">체크</button>
+    </nav>
+
+    <main class="content-area">
+        <div id="info" class="tab-content active">
+            <div class="card translation-card">
+                <h3><i class="fa-solid fa-language"></i> 실시간 번역기</h3>
+                <div class="translator-container">
+                    <textarea id="sourceText" class="trans-input" placeholder="번역할 내용을 입력하세요..."></textarea>
+                    <div id="transResult" class="trans-output-box" style="display:none;"></div>
+                    <div class="trans-btn-grid">
+                        <button type="button" onclick="translateAction('target')" class="btn-primary">현지어로</button>
+                        <button type="button" onclick="translateAction('ko')" class="btn-success">한국어로</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>💡 여행 꿀팁 & 주의사항</h3>
+                <ul class="data-list">{% for tip in info.tips %}<li>{{ tip }}</li>{% endfor %}</ul>
+                <ul class="data-list" style="color: #d9534f;">{% for warn in info.warnings %}<li>{{ warn }}</li>{% endfor %}</ul>
+            </div>
+
+            <div class="card">
+                <h3>📱 필수 어플</h3>
+                {% for app in info.apps %}
+                <div class="app-item-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <div class="app-info"><strong>{{ app.name }}</strong><br><small style="color: #666;">{{ app.desc }}</small></div>
+                    <a href="{{ app.link }}" target="_blank" style="color: #007bff; font-size: 1.5rem;"><i class="fa-solid fa-circle-arrow-down"></i></a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="shopping" class="tab-content">
+            <div class="card">
+                <h3>🛒 추천 쇼핑템</h3>
+                <div class="shopping-grid">
+                    {% for item in info.shopping %}
+                    <a href="https://www.google.com/search?q={{ info.city }}+{{ item }}&tbm=isch" target="_blank" class="shop-item">
+                        <i class="fa-solid fa-magnifying-glass"></i> {{ item }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div id="phrases" class="tab-content">
+            {% for cat, items in info.phrases.items() %}
+            <div class="phrase-card">
+                <div class="phrase-header">{{ cat }}</div>
+                {% for p in items %}
+                <div class="phrase-row"><p class="txt-ko">{{ p.ko }}</p><p class="txt-local">{{ p.local }}</p></div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div id="calc" class="tab-content">
+            <div class="card">
+                <h3>🔢 환율 계산기</h3>
+                <div class="calc-box-improved">
+                    <div class="calc-row">
+                        <span class="currency-label">{{ info.currency }}</span>
+                        <input type="number" id="foreignInput" class="calc-input" placeholder="0">
+                    </div>
+                    <div class="calc-row">
+                        <span class="currency-label">KRW</span>
+                        <input type="text" id="krwOutput" class="calc-output" readonly placeholder="0">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="todo" class="tab-content">
+            <div class="card">
+                <h3>✅ 체크리스트</h3>
+                {% for cat, items in checklist.items() %}
+                <div class="todo-group">
+                    <h4>{{ cat }}</h4>
+                    {% for item in items %}<label style="display:block; margin:5px 0;"><input type="checkbox"> {{ item }}</label>{% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const cityLangMap = {
+            'tokyo':'ja', 'osaka':'ja', 'fukuoka':'ja', 'danang':'vi', 
+            'hochiminh':'vi', 'bangkok':'th', 'taipei':'zh-TW', 
+            'hongkong':'zh-TW', 'nyc':'en', 'seoul':'ko'
+        };
+        let currentTargetLang = cityLangMap["{{ selected_id }}"] || 'ko';
+
+        function forceTranslateUI(langCode) {
+            if(!langCode) return;
+            document.cookie = `googtrans=/ko/${langCode}; path=/`;
+            document.cookie = `googtrans=/ko/${langCode}; domain=${location.hostname}; path=/`;
+            const baseUrl = window.location.href.split('#')[0];
+            window.location.href = baseUrl + '#googtrans(ko|' + langCode + ')';
+            location.reload();
+        }
+
+        function changeCity(cityId) {
+            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${location.hostname};`;
+            window.location.href = '/?country=' + cityId;
+        }
+
+        window.onload = function() {
+            const rateVal = parseFloat("{{ info.rate_calc }}");
+            document.getElementById('foreignInput')?.addEventListener('input', (e) => {
+                const val = e.target.value;
+                document.getElementById('krwOutput').value = val ? Math.round(val * rateVal).toLocaleString() + " 원" : '';
+            });
+            const match = document.cookie.match(/googtrans=\/ko\/([^;]+)/);
+            if (match) { document.getElementById('customLangSelect').value = match[1]; }
+        };
+
+        function translateAction(mode) {
+            const text = document.getElementById('sourceText').value;
+            if(!text) return;
+            let lang = (mode === 'target') ? currentTargetLang : 'ko';
+            fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`)
+            .then(res => res.json()).then(data => {
+                const rb = document.getElementById('transResult');
+                if (data && data[0] && data[0][0][0]) { 
+                    rb.innerText = data[0][0][0]; 
+                    rb.style.display = 'block'; 
+                }
+            });
+        }
+
+        function showTab(event, id) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>

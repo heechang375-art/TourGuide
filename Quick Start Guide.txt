@@ -1,0 +1,49 @@
+# ⚡ Global Travel Manager Quick Start Guide
+
+이 가이드는 로컬 환경에서 프로젝트를 가장 빠르게 실행하기 위한 핵심 단계만 모아놓은 문서입니다.
+
+---
+
+## 1. 필수 준비물 (Prerequisites)
+* Python 3.8 이상 설치
+* OpenWeatherMap API 키 ([발급받기](https://openweathermap.org/api))
+
+---
+
+## 2. 원클릭 실행 단계 (Step-by-Step)
+
+### ① 프로젝트 다운로드 및 이동
+git clone https://github.com/본인계정명/저장소이름.git
+cd 저장소이름
+
+### ② 가상환경 설정 및 라이브러리 설치
+
+# Windows
+python -m venv venv
+venv\Scripts\activate
+pip install flask requests python-dotenv
+
+# Mac/Linux
+python3 -m venv venv
+source venv/bin/activate
+pip install flask requests python-dotenv
+
+### ③ API 키 설정 (중요)
+프로젝트 루트 폴더에 `.env` 파일을 만들고 아래 내용을 한 줄만 적어주세요.
+WEATHER_API_KEY=본인의_실제_API_키_값
+
+### ④ 서버 실행
+python app.py
+
+---
+
+## 3. 접속 정보
+* 서버가 실행되면 브라우저에서 아래 주소로 접속하세요.
+* URL: http://127.0.0.1:5000
+
+---
+
+## 4. 문제 해결 (Troubleshooting)
+* 'Address already in use': 다른 프로그램이 5000번 포트를 사용 중입니다. app.py 하단의 port=5000을 8080 등으로 변경하세요.
+* 'ModuleNotFoundError': pip install이 정상적으로 완료되었는지, 가상환경이 켜져 있는지 확인하세요.
+* '날씨 정보 미표시': .env 파일의 API 키가 정확한지 확인하세요. (발급 직후에는 활성화까지 시간이 걸릴 수 있습니다.)

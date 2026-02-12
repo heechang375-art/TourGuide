@@ -47,13 +47,7 @@
                 </div>
                 <div class="info-content">
                     <div class="info-label">환율</div>
-                    <div class="info-value" id="rateDisplay">
-                        {% if info.currency in ['JPY', 'VND'] %}
-                            {{ (info.rate_calc * 100) | round(2) }}원
-                        {% else %}
-                            {{ info.rate_display }}원
-                        {% endif %}
-                    </div>
+                    <div class="info-value" id="rateDisplay"></div>
                     <div class="info-sub">
                         {% if info.currency in ['JPY', 'VND'] %}
                             100 {{ info.currency }}
@@ -202,27 +196,30 @@
             </div>
         </div>
 
-        <!-- 환율 탭 -->
+        <!-- 환율 계산기 탭 -->
         <div id="calc" class="tab-content">
             <div class="card">
                 <h3><i class="fa-solid fa-calculator"></i> 환율 계산기</h3>
                 <div class="calc-box-improved">
                     <div class="calc-row">
-                        <span class="currency-label">{{ info.currency }}</span>
+                        <div class="currency-label">{{ info.currency }}</div>
                         <input type="text" id="foreignInput" class="calc-input" placeholder="0" inputmode="numeric">
                     </div>
-                    <div class="calc-arrow">↓</div>
+                    <div class="calc-arrow">
+                        <i class="fa-solid fa-arrow-down"></i>
+                    </div>
                     <div class="calc-row">
-                        <span class="currency-label">KRW</span>
-                        <input type="text" id="krwOutput" class="calc-output" placeholder="0 원" readonly>
+                        <div class="currency-label">KRW</div>
+                        <input type="text" id="krwOutput" class="calc-output" readonly placeholder="0 원">
                     </div>
                     <button onclick="calculateExchange()" class="calc-btn">
-                        <i class="fa-solid fa-calculator"></i> 계산하기
+                        <i class="fa-solid fa-calculator"></i>
+                        계산하기
                     </button>
                     {% if info.currency in ['JPY', 'VND'] %}
                     <div class="calc-unit-info">
                         <i class="fa-solid fa-circle-info"></i>
-                        <span><strong>{{ info.currency }}</strong>는 100단위로만 환전 가능합니다</span>
+                        <span><strong>{{ info.currency }}</strong>는 100 단위로만 환전 가능합니다</span>
                     </div>
                     {% endif %}
                 </div>
@@ -232,7 +229,7 @@
         <!-- 체크리스트 탭 -->
         <div id="todo" class="tab-content">
             <div class="card">
-                <h3><i class="fa-solid fa-list-check"></i> 준비물 체크리스트</h3>
+                <h3><i class="fa-solid fa-list-check"></i> 여행 준비 체크리스트</h3>
                 {% for category, items in checklist.items() %}
                 <div class="checklist-category">
                     <h4>{{ category }}</h4>
@@ -252,6 +249,7 @@
         const currentRate = {{ info.rate_calc }};
         const currentCurrency = "{{ info.currency }}";
         let userSelectedLang = 'ko';
+        const currentCountryId = "{{ selected_id }}";
 
         // 국가-언어 매핑
         const countryLangMap = {
@@ -267,15 +265,28 @@
             'seoul': 'ko'
         };
 
-        const langToCode = {
-            'ko': 'ko',
-            'ja': 'ja',
-            'vi': 'vi',
-            'th': 'th',
-            'zh-CN': 'zh-CN',
-            'zh-TW': 'zh-TW',
-            'en': 'en'
-        };
+        // 숫자 쉼표 포맷
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function removeCommas(str) {
+            return str.replace(/,/g, '');
+        }
+
+        // 환율 표시 업데이트 (쉼표 포맷)
+        function updateRateDisplay() {
+            const rateDisplay = document.getElementById('rateDisplay');
+            if (rateDisplay) {
+                let displayValue;
+                if (currentCurrency === 'JPY' || currentCurrency === 'VND') {
+                    displayValue = formatNumber(Math.round(currentRate * 100));
+                } else {
+                    displayValue = formatNumber(Math.round(currentRate * 100) / 100);
+                }
+                rateDisplay.textContent = displayValue + '원';
+            }
+        }
 
         // 언어 변경
         function changeLang(langCode) {
@@ -289,10 +300,11 @@
             }
             
             document.cookie = `googtrans=/ko/${langCode}; path=/;`;
-            location.reload();
+            updateTranslateButtons();
+            setTimeout(() => location.reload(), 100);
         }
 
-        // 여행지 변경
+        // 여행지 변경 (선택한 국가의 언어로 자동 변경)
         function changeCity(cityId) {
             // 언어를 해당 국가 기본 언어로 변경
             const defaultLang = countryLangMap[cityId] || 'ko';
@@ -300,17 +312,11 @@
             window.location.href = '/?country=' + cityId;
         }
 
-        // 숫자 쉼표 포맷
-        function formatNumber(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
-
-        function removeCommas(str) {
-            return str.replace(/,/g, '');
-        }
-
         // 환율 입력 필드에 실시간 쉼표 추가
         document.addEventListener('DOMContentLoaded', function() {
+            // 환율 표시 업데이트
+            updateRateDisplay();
+
             const foreignInput = document.getElementById('foreignInput');
             if (foreignInput) {
                 foreignInput.addEventListener('input', function(e) {
@@ -331,10 +337,17 @@
                 }
             } else {
                 // 여행지에 따라 기본 언어 설정
-                const selectedCountry = "{{ selected_id }}";
-                const defaultLang = countryLangMap[selectedCountry] || 'ko';
+                const defaultLang = countryLangMap[currentCountryId] || 'ko';
                 userSelectedLang = defaultLang;
-                document.getElementById('langSelector').value = defaultLang;
+                const langSelector = document.getElementById('langSelector');
+                if (langSelector) {
+                    langSelector.value = defaultLang;
+                }
+                // 처음 로드시 해당 국가 언어로 설정
+                if (defaultLang !== 'ko') {
+                    document.cookie = `googtrans=/ko/${defaultLang}; path=/;`;
+                    setTimeout(() => location.reload(), 100);
+                }
             }
             
             updateTranslateButtons();
@@ -355,17 +368,24 @@
             const targetBtn = document.getElementById('targetLangBtn');
             const koreanBtn = document.getElementById('koreanBtn');
             
+            // 도시에 따른 현지어
+            const cityLang = countryLangMap[currentCountryId] || 'en';
+            
             if (targetBtn) {
-                const targetLang = userSelectedLang || 'ko';
-                targetBtn.textContent = `${langNames[targetLang] || '현지어'}로`;
+                targetBtn.textContent = `${langNames[cityLang] || '현지어'}로`;
             }
             
             if (koreanBtn) {
-                koreanBtn.textContent = userSelectedLang === 'ko' ? 'English' : '한국어로';
+                // 선택한 언어가 한국어면 영어로, 아니면 한국어로
+                if (userSelectedLang === 'ko') {
+                    koreanBtn.textContent = 'English';
+                } else {
+                    koreanBtn.textContent = '한국어로';
+                }
             }
         }
 
-        // 번역 기능
+        // 번역 기능 (개선)
         function translateAction(mode) {
             const text = document.getElementById('sourceText').value;
             if(!text) {
@@ -375,8 +395,10 @@
             
             let targetLang;
             if (mode === 'target') {
-                targetLang = userSelectedLang || 'ko';
+                // 도시의 언어로 번역
+                targetLang = countryLangMap[currentCountryId] || 'en';
             } else {
+                // 선택한 UI 언어가 한국어면 영어로, 아니면 한국어로
                 targetLang = userSelectedLang === 'ko' ? 'en' : 'ko';
             }
             

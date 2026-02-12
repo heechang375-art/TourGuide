@@ -8,6 +8,20 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     
     <script type="text/javascript">
+        // 쿠키 설정 함수
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+            document.cookie = name + '=' + value + ';expires=' + expires.toUTCString() + ';path=/';
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
                 pageLanguage: 'ko',
@@ -78,6 +92,8 @@
         </div>
     </header>
 
+    <div id="google_translate_element"></div>
+
     <nav class="mobile-tabs">
         <button onclick="showTab(event, 'info')" class="tab-btn active">
             <i class="fa-solid fa-circle-info"></i>
@@ -111,7 +127,7 @@
                 <div id="transResult" class="trans-output-compact" style="display:none;"></div>
                 <div class="trans-btn-grid">
                     <button onclick="translateAction('target')" class="btn-primary" id="targetLangBtn">현지어로</button>
-                    <button onclick="translateAction('ko')" class="btn-success" id="koreanBtn">한국어로</button>
+                    <button onclick="translateAction('reverse')" class="btn-success" id="reverseBtn">한국어로</button>
                 </div>
             </div>
             
@@ -293,17 +309,15 @@
             }
         }
 
-        // 환율 표시 업데이트 (여행지 통화 → 선택 언어 통화)
+        // 환율 표시 업데이트
         async function updateRateDisplay() {
             const rateDisplay = document.getElementById('rateDisplay');
             const rateCurrencyLabel = document.getElementById('rateCurrencyLabel');
             
             if (!rateDisplay || !rateCurrencyLabel) return;
 
-            // 선택한 언어의 통화
             const langCurrency = langToCurrency[userSelectedLang];
             
-            // 여행지와 언어가 같은 경우
             if (langCurrency === currentCurrency) {
                 rateDisplay.textContent = '-';
                 rateCurrencyLabel.textContent = '(같은 통화)';
@@ -313,18 +327,15 @@
                 return;
             }
 
-            // 환율 가져오기 (여행지 통화 → 언어 국가 통화)
             sourceCurrency = currentCurrency;
             targetCurrency = langCurrency;
             
             const rate = await fetchExchangeRate(sourceCurrency, targetCurrency);
             currentDisplayRate = rate;
 
-            // 표시 포맷 (실제 환전 기준)
             let displayValue;
             let baseAmount;
             
-            // JPY, VND는 100단위 기준
             if (sourceCurrency === 'JPY' || sourceCurrency === 'VND') {
                 baseAmount = 100;
                 displayValue = formatNumber(Math.round(rate * 100 * 100) / 100);
@@ -337,21 +348,50 @@
             rateDisplay.textContent = displayValue + ' ' + targetCurrency;
         }
 
-        // 언어 변경 (페이지 새로고침으로 처리)
-        function changeLang(langCode) {
-            // 쿠키에 언어 저장
-            document.cookie = `googtrans=/ko/${langCode}; path=/; max-age=31536000`;
-            document.cookie = `selectedLang=${langCode}; path=/; max-age=31536000`;
+        // Google Translate 트리거 함수
+        function triggerGoogleTranslate(lang) {
+            let checkCount = 0;
+            const maxChecks = 50;
             
-            // 페이지 새로고침
-            location.reload();
+            const interval = setInterval(() => {
+                const selectElem = document.querySelector('.goog-te-combo');
+                if (selectElem) {
+                    selectElem.value = lang;
+                    selectElem.dispatchEvent(new Event('change'));
+                    clearInterval(interval);
+                    console.log('Google Translate activated:', lang);
+                } else {
+                    checkCount++;
+                    if (checkCount >= maxChecks) {
+                        clearInterval(interval);
+                        console.log('Google Translate widget not found');
+                    }
+                }
+            }, 100);
+        }
+
+        // 언어 변경
+        function changeLang(langCode) {
+            userSelectedLang = langCode;
+            
+            // 쿠키 설정
+            setCookie('googtrans', `/ko/${langCode}`, 365);
+            setCookie('selectedLang', langCode, 365);
+            
+            // Google Translate 트리거
+            triggerGoogleTranslate(langCode);
+            
+            // 환율 및 버튼 업데이트
+            updateRateDisplay();
+            updateTranslateButtons();
+            updateCalcCurrencies();
         }
 
         // 여행지 변경
         function changeCity(cityId) {
-            // 언어 쿠키 초기화 (새로운 도시로 가면 기본 한국어로)
-            document.cookie = 'googtrans=; path=/; max-age=0';
-            document.cookie = 'selectedLang=ko; path=/; max-age=31536000';
+            // 모든 쿠키 초기화
+            setCookie('googtrans', '', -1);
+            setCookie('selectedLang', '', -1);
             window.location.href = '/?country=' + cityId;
         }
 
@@ -365,7 +405,6 @@
             if (calcSourceCurrency) calcSourceCurrency.textContent = sourceCurrency;
             if (calcTargetCurrency) calcTargetCurrency.textContent = targetCurrency;
 
-            // 100단위 환전 안내
             if (calcUnitInfo && calcUnitCurrency) {
                 if (sourceCurrency === 'JPY' || sourceCurrency === 'VND') {
                     calcUnitInfo.style.display = 'flex';
@@ -388,18 +427,12 @@
                 });
             }
 
-            // 저장된 언어 쿠키 확인
-            const langCookie = document.cookie.split('; ').find(row => row.startsWith('selectedLang='));
-            if (langCookie) {
-                userSelectedLang = langCookie.split('=')[1];
+            // 저장된 언어 불러오기
+            const savedLang = getCookie('selectedLang');
+            if (savedLang) {
+                userSelectedLang = savedLang;
             } else {
-                // 쿠키가 없으면 googtrans 쿠키 확인
-                const match = document.cookie.match(/googtrans=\/ko\/([^;]+)/);
-                if (match && match[1] !== 'ko') {
-                    userSelectedLang = match[1];
-                } else {
-                    userSelectedLang = 'ko';
-                }
+                userSelectedLang = 'ko';
             }
 
             // 언어 선택기 설정
@@ -408,14 +441,10 @@
                 langSelector.value = userSelectedLang;
             }
 
-            // Google Translate 적용
-            setTimeout(() => {
-                const gtCombo = document.querySelector('.goog-te-combo');
-                if (gtCombo && userSelectedLang !== 'ko') {
-                    gtCombo.value = userSelectedLang;
-                    gtCombo.dispatchEvent(new Event('change'));
-                }
-            }, 1000);
+            // Google Translate 초기화 (언어가 한국어가 아닌 경우)
+            if (userSelectedLang !== 'ko') {
+                triggerGoogleTranslate(userSelectedLang);
+            }
             
             // 환율 표시 업데이트
             updateRateDisplay();
@@ -436,20 +465,19 @@
             };
             
             const targetBtn = document.getElementById('targetLangBtn');
-            const koreanBtn = document.getElementById('koreanBtn');
+            const reverseBtn = document.getElementById('reverseBtn');
             
-            // 도시에 따른 현지어
             const cityLang = countryLangMap[currentCountryId] || 'en';
             
             if (targetBtn) {
                 targetBtn.textContent = `${langNames[cityLang] || '현지어'}로`;
             }
             
-            if (koreanBtn) {
+            if (reverseBtn) {
                 if (userSelectedLang === 'ko') {
-                    koreanBtn.textContent = 'English';
+                    reverseBtn.textContent = 'English';
                 } else {
-                    koreanBtn.textContent = '한국어로';
+                    reverseBtn.textContent = '한국어로';
                 }
             }
         }
@@ -464,10 +492,8 @@
             
             let targetLang;
             if (mode === 'target') {
-                // 도시의 언어로 번역
                 targetLang = countryLangMap[currentCountryId] || 'en';
             } else {
-                // 선택한 UI 언어가 한국어면 영어로, 아니면 한국어로
                 targetLang = userSelectedLang === 'ko' ? 'en' : 'ko';
             }
             

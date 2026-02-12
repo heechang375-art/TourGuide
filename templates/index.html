@@ -28,7 +28,7 @@
 </head>
 <body>
     <header class="app-header">
-        <!-- 날씨 + 환율 카드형 -->
+        <!-- 날씨 + 환율 카드 -->
         <div class="info-cards">
             <div class="info-card weather-card">
                 <div class="info-icon">
@@ -65,27 +65,27 @@
             </div>
         </div>
 
-        <!-- 국가 선택 (국기 이모지 포함) -->
-        <div class="country-selector-wrapper">
-            <label class="selector-label">🌏 여행지 선택</label>
-            <select class="country-selector" onchange="changeCity(this.value)">
-                {% for id, c in countries.items() %}
-                <option value="{{ id }}" {% if id == selected_id %}selected{% endif %}>{{ c.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- 언어 선택 (버튼 그리드) -->
-        <div class="lang-selector-wrapper">
-            <label class="selector-label">🗣️ 언어 선택</label>
-            <div class="lang-grid" id="customLangSelect">
-                <button class="lang-btn" data-lang="ko">🇰🇷 한국어</button>
-                <button class="lang-btn" data-lang="ja">🇯🇵 日本語</button>
-                <button class="lang-btn" data-lang="vi">🇻🇳 Tiếng Việt</button>
-                <button class="lang-btn" data-lang="th">🇹🇭 ไทย</button>
-                <button class="lang-btn" data-lang="zh-CN">🇨🇳 简体中文</button>
-                <button class="lang-btn" data-lang="zh-TW">🇭🇰 繁體中文</button>
-                <button class="lang-btn" data-lang="en">🇺🇸 English</button>
+        <!-- 여행지 + 언어 선택 (한 줄) -->
+        <div class="selector-row">
+            <div class="selector-col">
+                <label class="selector-label">🌏 여행지</label>
+                <select class="compact-selector" onchange="changeCity(this.value)">
+                    {% for id, c in countries.items() %}
+                    <option value="{{ id }}" {% if id == selected_id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="selector-col">
+                <label class="selector-label">🗣️ 언어</label>
+                <select class="compact-selector" id="langSelector" onchange="changeLang(this.value)">
+                    <option value="ko">🇰🇷 한국어</option>
+                    <option value="ja">🇯🇵 日本語</option>
+                    <option value="vi">🇻🇳 Tiếng Việt</option>
+                    <option value="th">🇹🇭 ไทย</option>
+                    <option value="zh-CN">🇨🇳 简体中文</option>
+                    <option value="zh-TW">🇭🇰 繁體中文</option>
+                    <option value="en">🇺🇸 English</option>
+                </select>
             </div>
         </div>
     </header>
@@ -95,13 +95,13 @@
             <i class="fa-solid fa-circle-info"></i>
             <span>정보</span>
         </button>
-        <button onclick="showTab(event, 'shopping')" class="tab-btn">
-            <i class="fa-solid fa-bag-shopping"></i>
-            <span>쇼핑</span>
-        </button>
         <button onclick="showTab(event, 'phrases')" class="tab-btn">
             <i class="fa-solid fa-comments"></i>
             <span>회화</span>
+        </button>
+        <button onclick="showTab(event, 'shopping')" class="tab-btn">
+            <i class="fa-solid fa-bag-shopping"></i>
+            <span>쇼핑</span>
         </button>
         <button onclick="showTab(event, 'calc')" class="tab-btn">
             <i class="fa-solid fa-calculator"></i>
@@ -114,58 +114,80 @@
     </nav>
 
     <main class="content-area">
+        <!-- 정보 탭 -->
         <div id="info" class="tab-content active">
-            <div class="card translation-card">
-                <h3><i class="fa-solid fa-language"></i> 실시간 번역기</h3>
-                <div class="translator-container">
-                    <textarea id="sourceText" class="trans-input" placeholder="번역할 내용을 입력하세요..."></textarea>
-                    <div id="transResult" class="trans-output-box" style="display:none;"></div>
-                    <div class="trans-btn-grid">
-                        <button type="button" onclick="translateAction('target')" class="btn-primary" id="targetLangBtn">현지어로</button>
-                        <button type="button" onclick="translateAction('ko')" class="btn-success">한국어로</button>
-                    </div>
+            <!-- 번역기 (압축) -->
+            <div class="card compact-card">
+                <h3><i class="fa-solid fa-language"></i> 번역기</h3>
+                <textarea id="sourceText" class="trans-input-compact" placeholder="번역할 내용 입력..."></textarea>
+                <div id="transResult" class="trans-output-compact" style="display:none;"></div>
+                <div class="trans-btn-grid">
+                    <button onclick="translateAction('target')" class="btn-primary" id="targetLangBtn">현지어로</button>
+                    <button onclick="translateAction('ko')" class="btn-success" id="koreanBtn">한국어로</button>
                 </div>
             </div>
             
-            <div class="card">
-                <h3><i class="fa-solid fa-lightbulb"></i> 여행 꿀팁 & 주의사항</h3>
-                <div class="tip-section">
-                    <div class="tip-header">✅ 꿀팁</div>
-                    <ul class="data-list">{% for tip in info.tips %}<li>{{ tip }}</li>{% endfor %}</ul>
+            <!-- 여행 팁 (압축) -->
+            <div class="card compact-card">
+                <h3><i class="fa-solid fa-lightbulb"></i> 팁 & 주의사항</h3>
+                <div class="tip-compact">
+                    <strong>✅ 꿀팁</strong>
+                    <ul class="compact-list">{% for tip in info.tips %}<li>{{ tip }}</li>{% endfor %}</ul>
                 </div>
-                <div class="warning-section">
-                    <div class="warning-header">⚠️ 주의사항</div>
-                    <ul class="data-list">{% for warn in info.warnings %}<li>{{ warn }}</li>{% endfor %}</ul>
+                <div class="warning-compact">
+                    <strong>⚠️ 주의</strong>
+                    <ul class="compact-list">{% for warn in info.warnings %}<li>{{ warn }}</li>{% endfor %}</ul>
                 </div>
             </div>
 
-            <div class="card">
-                <h3><i class="fa-solid fa-mobile-screen-button"></i> 필수 어플</h3>
+            <!-- 필수 앱 (압축) -->
+            <div class="card compact-card">
+                <h3><i class="fa-solid fa-mobile-screen-button"></i> 필수 앱</h3>
                 {% for app in info.apps %}
-                <div class="app-item-modern">
-                    <div class="app-icon-wrapper">
+                <div class="app-item-compact">
+                    <div class="app-icon-small">
                         <i class="fa-solid fa-mobile-screen"></i>
                     </div>
-                    <div class="app-info">
+                    <div class="app-info-small">
                         <strong>{{ app.name }}</strong>
                         <small>{{ app.desc }}</small>
                     </div>
-                    {% if 'play.google.com' in app.link %}
-                        <a href="market://details?id={{ app.link.split('id=')[1] }}" class="app-download-btn">
-                            <i class="fa-brands fa-google-play"></i>
-                            <span>다운로드</span>
-                        </a>
-                    {% else %}
-                        <a href="{{ app.link }}" target="_blank" class="app-download-btn web-btn">
-                            <i class="fa-solid fa-globe"></i>
-                            <span>웹사이트</span>
-                        </a>
-                    {% endif %}
+                    <a href="{{ app.link }}" target="_blank" class="app-btn-small">
+                        <i class="fa-solid fa-download"></i>
+                    </a>
                 </div>
                 {% endfor %}
             </div>
         </div>
 
+        <!-- 회화 탭 -->
+        <div id="phrases" class="tab-content">
+            <!-- 회화 카테고리 탭 -->
+            <div class="phrase-tabs">
+                {% set categories = info.phrases.keys() | list %}
+                {% for cat in categories %}
+                <button class="phrase-tab-btn {% if loop.first %}active{% endif %}" onclick="showPhraseTab(event, 'cat{{ loop.index0 }}')">
+                    {{ cat.split(' ')[0] }}
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- 회화 내용 -->
+            {% for cat, items in info.phrases.items() %}
+            <div id="cat{{ loop.index0 }}" class="phrase-tab-content {% if loop.first %}active{% endif %}">
+                <div class="phrase-card-new">
+                    {% for p in items %}
+                    <div class="phrase-item-new">
+                        <div class="phrase-ko">{{ p.ko }}</div>
+                        <div class="phrase-local">{{ p.local }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 쇼핑 탭 -->
         <div id="shopping" class="tab-content">
             <div class="card">
                 <h3><i class="fa-solid fa-cart-shopping"></i> 추천 쇼핑템</h3>
@@ -180,60 +202,44 @@
             </div>
         </div>
 
-        <div id="phrases" class="tab-content">
-            {% for cat, items in info.phrases.items() %}
-            <div class="phrase-card">
-                <div class="phrase-header">{{ cat }}</div>
-                {% for p in items %}
-                <div class="phrase-item">
-                    <p class="txt-ko">{{ p.ko }}</p>
-                    <p class="txt-local">{{ p.local }}</p>
-                </div>
-                {% endfor %}
-            </div>
-            {% endfor %}
-        </div>
-
+        <!-- 환율 탭 -->
         <div id="calc" class="tab-content">
             <div class="card">
-                <h3><i class="fa-solid fa-money-bill-transfer"></i> 환율 계산기</h3>
+                <h3><i class="fa-solid fa-calculator"></i> 환율 계산기</h3>
                 <div class="calc-box-improved">
                     <div class="calc-row">
                         <span class="currency-label">{{ info.currency }}</span>
-                        <input type="number" id="foreignInput" class="calc-input" placeholder="0" value="">
+                        <input type="text" id="foreignInput" class="calc-input" placeholder="0" inputmode="numeric">
                     </div>
-                    <div class="calc-arrow">
-                        <i class="fa-solid fa-arrow-down"></i>
-                    </div>
+                    <div class="calc-arrow">↓</div>
                     <div class="calc-row">
                         <span class="currency-label">KRW</span>
                         <input type="text" id="krwOutput" class="calc-output" placeholder="0 원" readonly>
                     </div>
-                    <button class="calc-btn" onclick="calculateExchange()">
+                    <button onclick="calculateExchange()" class="calc-btn">
                         <i class="fa-solid fa-calculator"></i> 계산하기
                     </button>
                     {% if info.currency in ['JPY', 'VND'] %}
-                    <div id="unitInfo" class="calc-unit-info">
+                    <div class="calc-unit-info">
                         <i class="fa-solid fa-circle-info"></i>
-                        <strong>환전 단위 안내:</strong> 
-                        <span id="unitText">100{{ '엔' if info.currency == 'JPY' else '동' }} 단위로 환전 가능</span>
+                        <span><strong>{{ info.currency }}</strong>는 100단위로만 환전 가능합니다</span>
                     </div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
+        <!-- 체크리스트 탭 -->
         <div id="todo" class="tab-content">
             <div class="card">
-                <h3><i class="fa-solid fa-clipboard-check"></i> 여행 준비 체크리스트</h3>
-                
+                <h3><i class="fa-solid fa-list-check"></i> 준비물 체크리스트</h3>
                 {% for category, items in checklist.items() %}
                 <div class="checklist-category">
                     <h4>{{ category }}</h4>
                     {% for item in items %}
                     <div class="checklist-item">
-                        <input type="checkbox" id="check_{{ loop.index0 }}_{{ loop.index }}">
-                        <label for="check_{{ loop.index0 }}_{{ loop.index }}">{{ item }}</label>
+                        <input type="checkbox" id="check{{ loop.index0 }}_{{ loop.index }}">
+                        <label for="check{{ loop.index0 }}_{{ loop.index }}">{{ item }}</label>
                     </div>
                     {% endfor %}
                 </div>
@@ -245,24 +251,37 @@
     <script>
         const currentRate = {{ info.rate_calc }};
         const currentCurrency = "{{ info.currency }}";
-        const currentTargetLang = "{{ info.city|lower|replace(' ', '') }}";
-        let userSelectedLang = null;
+        let userSelectedLang = 'ko';
 
-        // 언어 버튼 클릭 이벤트
-        document.querySelectorAll('.lang-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                const lang = this.dataset.lang;
-                forceTranslateUI(lang);
-            });
-        });
+        // 국가-언어 매핑
+        const countryLangMap = {
+            'tokyo': 'ja',
+            'osaka': 'ja',
+            'fukuoka': 'ja',
+            'danang': 'vi',
+            'hochiminh': 'vi',
+            'bangkok': 'th',
+            'taipei': 'zh-TW',
+            'hongkong': 'zh-TW',
+            'nyc': 'en',
+            'seoul': 'ko'
+        };
 
-        function forceTranslateUI(langCode) {
-            if (!langCode) return;
-            
+        const langToCode = {
+            'ko': 'ko',
+            'ja': 'ja',
+            'vi': 'vi',
+            'th': 'th',
+            'zh-CN': 'zh-CN',
+            'zh-TW': 'zh-TW',
+            'en': 'en'
+        };
+
+        // 언어 변경
+        function changeLang(langCode) {
             userSelectedLang = langCode;
             
+            // Google Translate 적용
             const gtCombo = document.querySelector('.goog-te-combo');
             if (gtCombo) {
                 gtCombo.value = langCode;
@@ -270,111 +289,83 @@
             }
             
             document.cookie = `googtrans=/ko/${langCode}; path=/;`;
-            
-            if ("{{ selected_id }}" === "seoul" && langCode !== "ko") {
-                updateReverseRate(langCode);
-            } else {
-                restoreOriginalRate();
-            }
-            
-            updateTargetButton();
+            location.reload();
         }
 
-        function updateReverseRate(langCode) {
-            const langToCurrency = {
-                'ja': { code: 'JPY', name: '엔' },
-                'vi': { code: 'VND', name: '동' },
-                'th': { code: 'THB', name: '바트' },
-                'zh-CN': { code: 'CNY', name: '위안' },
-                'zh-TW': { code: 'TWD', name: '달러' },
-                'en': { code: 'USD', name: '달러' }
-            };
-            
-            const targetCurrency = langToCurrency[langCode];
-            if (!targetCurrency) return;
-            
-            fetch(`https://open.er-api.com/v6/latest/KRW`)
-                .then(res => res.json())
-                .then(data => {
-                    const reverseRate = data.rates[targetCurrency.code];
-                    const rateDisplay = document.getElementById('rateDisplay');
-                    
-                    if (targetCurrency.code === 'JPY' || targetCurrency.code === 'VND') {
-                        const rate100 = (reverseRate * 100).toFixed(2);
-                        rateDisplay.innerHTML = `${rate100} ${targetCurrency.name}`;
-                    } else {
-                        rateDisplay.innerHTML = `${reverseRate.toFixed(2)} ${targetCurrency.name}`;
-                    }
-                })
-                .catch(err => console.error('환율 조회 실패:', err));
-        }
-
-        function restoreOriginalRate() {
-            const rateDisplay = document.getElementById('rateDisplay');
-            {% if info.currency in ['JPY', 'VND'] %}
-                rateDisplay.innerHTML = `{{ (info.rate_calc * 100) | round(2) }}원`;
-            {% else %}
-                rateDisplay.innerHTML = `{{ info.rate_display }}원`;
-            {% endif %}
-        }
-
+        // 여행지 변경
         function changeCity(cityId) {
-            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${location.hostname};`;
+            // 언어를 해당 국가 기본 언어로 변경
+            const defaultLang = countryLangMap[cityId] || 'ko';
+            document.cookie = `googtrans=/ko/${defaultLang}; path=/;`;
             window.location.href = '/?country=' + cityId;
         }
 
-        function roundToUnit(value, unit) {
-            return Math.round(value / unit) * unit;
+        // 숫자 쉼표 포맷
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
-        function calculateExchange() {
+        function removeCommas(str) {
+            return str.replace(/,/g, '');
+        }
+
+        // 환율 입력 필드에 실시간 쉼표 추가
+        document.addEventListener('DOMContentLoaded', function() {
             const foreignInput = document.getElementById('foreignInput');
-            const krwOutput = document.getElementById('krwOutput');
-            let val = parseFloat(foreignInput.value);
-            
-            if (!val || isNaN(val)) {
-                alert('금액을 입력해주세요.');
-                return;
-            }
-
-            if (currentCurrency === 'VND' || currentCurrency === 'JPY') {
-                const rounded = roundToUnit(val, 100);
-                if (rounded !== val) {
-                    foreignInput.value = rounded;
-                    val = rounded;
-                    alert(`${currentCurrency}는 100단위로만 환전 가능합니다.\n${rounded}으로 조정되었습니다.`);
-                }
-            }
-
-            const krwAmount = Math.round(val * currentRate);
-            krwOutput.value = krwAmount.toLocaleString() + " 원";
-        }
-
-        window.onload = function() {
-            const match = document.cookie.match(/googtrans=\/ko\/([^;]+)/);
-            if (match) { 
-                userSelectedLang = match[1];
-                document.querySelectorAll('.lang-btn').forEach(btn => {
-                    if (btn.dataset.lang === match[1]) {
-                        btn.classList.add('active');
+            if (foreignInput) {
+                foreignInput.addEventListener('input', function(e) {
+                    let value = removeCommas(e.target.value);
+                    if (value && !isNaN(value)) {
+                        e.target.value = formatNumber(value);
                     }
                 });
-                
-                if ("{{ selected_id }}" === "seoul" && match[1] !== "ko") {
-                    updateReverseRate(match[1]);
+            }
+
+            // 페이지 로드 시 저장된 언어 복원
+            const match = document.cookie.match(/googtrans=\/ko\/([^;]+)/);
+            if (match) {
+                userSelectedLang = match[1];
+                const langSelector = document.getElementById('langSelector');
+                if (langSelector) {
+                    langSelector.value = match[1];
                 }
+            } else {
+                // 여행지에 따라 기본 언어 설정
+                const selectedCountry = "{{ selected_id }}";
+                const defaultLang = countryLangMap[selectedCountry] || 'ko';
+                userSelectedLang = defaultLang;
+                document.getElementById('langSelector').value = defaultLang;
             }
             
-            updateTargetButton();
+            updateTranslateButtons();
+        });
 
-            document.getElementById('foreignInput')?.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    calculateExchange();
-                }
-            });
-        };
+        // 번역 버튼 텍스트 업데이트
+        function updateTranslateButtons() {
+            const langNames = {
+                'ko': '한국어',
+                'ja': '日本語',
+                'vi': 'Tiếng Việt',
+                'th': 'ไทย',
+                'zh-CN': '简体中文',
+                'zh-TW': '繁體中文',
+                'en': 'English'
+            };
+            
+            const targetBtn = document.getElementById('targetLangBtn');
+            const koreanBtn = document.getElementById('koreanBtn');
+            
+            if (targetBtn) {
+                const targetLang = userSelectedLang || 'ko';
+                targetBtn.textContent = `${langNames[targetLang] || '현지어'}로`;
+            }
+            
+            if (koreanBtn) {
+                koreanBtn.textContent = userSelectedLang === 'ko' ? 'English' : '한국어로';
+            }
+        }
 
+        // 번역 기능
         function translateAction(mode) {
             const text = document.getElementById('sourceText').value;
             if(!text) {
@@ -384,9 +375,9 @@
             
             let targetLang;
             if (mode === 'target') {
-                targetLang = userSelectedLang || currentTargetLang;
+                targetLang = userSelectedLang || 'ko';
             } else {
-                targetLang = 'ko';
+                targetLang = userSelectedLang === 'ko' ? 'en' : 'ko';
             }
             
             fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`)
@@ -402,26 +393,42 @@
             });
         }
 
-        function updateTargetButton() {
-            const btn = document.getElementById('targetLangBtn');
-            const langNames = {
-                'ko': '한국어',
-                'ja': '일본어',
-                'vi': '베트남어',
-                'th': '태국어',
-                'zh-CN': '중국어',
-                'zh-TW': '중국어',
-                'en': '영어'
-            };
+        // 환율 계산
+        function calculateExchange() {
+            const foreignInput = document.getElementById('foreignInput');
+            const krwOutput = document.getElementById('krwOutput');
+            let val = parseFloat(removeCommas(foreignInput.value));
             
-            const targetLang = userSelectedLang || currentTargetLang;
-            const langName = langNames[targetLang] || '현지어';
-            btn.innerText = `${langName}로`;
+            if (!val || isNaN(val)) {
+                alert('금액을 입력해주세요.');
+                return;
+            }
+
+            if (currentCurrency === 'VND' || currentCurrency === 'JPY') {
+                const rounded = Math.round(val / 100) * 100;
+                if (rounded !== val) {
+                    foreignInput.value = formatNumber(rounded);
+                    val = rounded;
+                    alert(`${currentCurrency}는 100단위로만 환전 가능합니다.\n${formatNumber(rounded)}으로 조정되었습니다.`);
+                }
+            }
+
+            const krwAmount = Math.round(val * currentRate);
+            krwOutput.value = formatNumber(krwAmount) + " 원";
         }
 
+        // 탭 전환
         function showTab(event, id) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // 회화 탭 전환
+        function showPhraseTab(event, id) {
+            document.querySelectorAll('.phrase-tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.phrase-tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             event.currentTarget.classList.add('active');
         }

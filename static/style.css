@@ -76,67 +76,43 @@ body {
     color: #888;
 }
 
-/* Country Selector */
-.country-selector-wrapper {
-    margin-bottom: 16px;
+/* Selector Row (Country + Language in one line) */
+.selector-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.selector-col {
+    display: flex;
+    flex-direction: column;
 }
 
 .selector-label {
     display: block;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
     color: white;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-.country-selector {
+.compact-selector {
     width: 100%;
-    padding: 16px;
-    border-radius: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
     border: none;
     background: white;
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 13px;
+    font-weight: 600;
     color: #667eea;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M10.293 3.293L6 7.586 1.707 3.293A1 1 0 00.293 4.707l5 5a1 1 0 001.414 0l5-5a1 1 0 10-1.414-1.414z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 16px center;
+    background-position: right 12px center;
     cursor: pointer;
-}
-
-/* Language Selector (Button Grid) */
-.lang-selector-wrapper {
-    margin-bottom: 12px;
-}
-
-.lang-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-}
-
-.lang-btn {
-    padding: 12px 8px;
-    border: 2px solid rgba(255,255,255,0.3);
-    background: rgba(255,255,255,0.15);
-    color: white;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    backdrop-filter: blur(10px);
-}
-
-.lang-btn:active,
-.lang-btn.active {
-    background: white;
-    color: #667eea;
-    transform: scale(0.95);
-    border-color: white;
 }
 
 /* Tab Navigation */
@@ -190,18 +166,28 @@ body {
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
-.card h3 {
-    margin: 0 0 20px 0;
-    font-size: 18px;
+.compact-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.card h3,
+.compact-card h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
     color: #1a1a1a;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.card h3 i {
+.card h3 i,
+.compact-card h3 i {
     color: #667eea;
-    font-size: 20px;
+    font-size: 18px;
 }
 
 /* Translator */
@@ -217,7 +203,20 @@ body {
     resize: vertical;
 }
 
-.trans-input:focus {
+.trans-input-compact {
+    width: 100%;
+    min-height: 80px;
+    border: 2px solid #e5e5ea;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.trans-input:focus,
+.trans-input-compact:focus {
     outline: none;
     border-color: #667eea;
 }
@@ -231,6 +230,18 @@ body {
     color: #667eea;
     border-left: 4px solid #667eea;
     min-height: 50px;
+}
+
+.trans-output-compact {
+    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #667eea;
+    border-left: 3px solid #667eea;
+    min-height: 40px;
+    font-size: 14px;
 }
 
 .trans-btn-grid { 
@@ -590,4 +601,153 @@ body {
 .content-area {
     background: #f5f7fa;
     min-height: calc(100vh - 400px);
+}
+
+/* Compact Tips & Warnings */
+.tip-compact,
+.warning-compact {
+    margin-bottom: 12px;
+}
+
+.tip-compact strong,
+.warning-compact strong {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: #11998e;
+}
+
+.warning-compact strong {
+    color: #f5576c;
+}
+
+.compact-list {
+    padding-left: 20px;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.compact-list li {
+    margin-bottom: 6px;
+}
+
+/* Compact App Items */
+.app-item-compact {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #f5f7fa;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.app-icon-small {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.app-info-small {
+    flex: 1;
+}
+
+.app-info-small strong {
+    display: block;
+    font-size: 14px;
+    color: #1a1a1a;
+    margin-bottom: 2px;
+}
+
+.app-info-small small {
+    color: #666;
+    font-size: 12px;
+}
+
+.app-btn-small {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* Phrase Tabs */
+.phrase-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 6px;
+    padding: 12px 16px;
+    background: white;
+    position: sticky;
+    top: 48px;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    -webkit-overflow-scrolling: touch;
+}
+
+.phrase-tab-btn {
+    padding: 8px 16px;
+    border: none;
+    background: #f5f7fa;
+    color: #666;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s;
+    flex-shrink: 0;
+}
+
+.phrase-tab-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.phrase-tab-content {
+    display: none;
+}
+
+.phrase-tab-content.active {
+    display: block;
+}
+
+.phrase-card-new {
+    padding: 16px;
+}
+
+.phrase-item-new {
+    padding: 14px 16px;
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.phrase-ko {
+    font-weight: 700;
+    font-size: 15px;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+}
+
+.phrase-local {
+    font-size: 14px;
+    color: #667eea;
+    font-weight: 500;
 }

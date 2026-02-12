@@ -375,23 +375,46 @@
             console.log('Changing language to:', langCode);
             userSelectedLang = langCode;
             
-            // 기존 쿠키 완전히 삭제
+            // 모든 Google Translate 관련 쿠키 삭제 (여러 도메인 경로 시도)
+            const cookiesToDelete = ['googtrans', 'googtrans_', '_ga', '_gid'];
+            const domains = ['', '.hccloud.store', 'hccloud.store'];
+            const paths = ['/', ''];
+            
+            cookiesToDelete.forEach(cookieName => {
+                domains.forEach(domain => {
+                    paths.forEach(path => {
+                        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}; domain=${domain}`;
+                        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path};`;
+                    });
+                });
+            });
+            
+            // 완전 초기화를 위한 추가 삭제
             document.cookie.split(";").forEach(function(c) { 
-                if (c.trim().startsWith('googtrans')) {
-                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                const cookieName = c.split("=")[0].trim();
+                if (cookieName.includes('goog')) {
+                    document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/";
+                    document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.hccloud.store";
+                    document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=hccloud.store";
                 }
             });
             
+            console.log('All cookies cleared');
+            
             // 새 쿠키 설정
-            setCookie('googtrans', `/ko/${langCode}`, 365);
             setCookie('selectedLang', langCode, 365);
             
-            console.log('Cookie set to:', `/ko/${langCode}`);
+            // 한국어가 아니면 googtrans 쿠키 설정
+            if (langCode !== 'ko') {
+                setCookie('googtrans', `/ko/${langCode}`, 365);
+            }
             
-            // 페이지 새로고침으로 Google Translate 강제 재시작
+            console.log('New cookie set:', langCode);
+            
+            // 페이지 새로고침
             setTimeout(() => {
                 window.location.reload();
-            }, 100);
+            }, 200);
         }
 
         // 여행지 변경
@@ -436,6 +459,23 @@
 
             // 저장된 언어 불러오기
             const savedLang = getCookie('selectedLang');
+            const googtransCookie = getCookie('googtrans');
+            
+            console.log('Saved lang:', savedLang);
+            console.log('Googtrans cookie:', googtransCookie);
+            
+            // 쿠키 불일치 확인 및 수정
+            if (savedLang && googtransCookie) {
+                const expectedGoogtrans = `/ko/${savedLang}`;
+                if (googtransCookie !== expectedGoogtrans && savedLang !== 'ko') {
+                    console.log('Cookie mismatch detected, clearing googtrans');
+                    // googtrans 쿠키 삭제
+                    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
+                    // 새로 설정
+                    setCookie('googtrans', expectedGoogtrans, 365);
+                }
+            }
+            
             if (savedLang) {
                 userSelectedLang = savedLang;
             } else {

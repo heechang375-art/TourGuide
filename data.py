@@ -278,8 +278,8 @@ COUNTRIES = {
             {"name": "Visit Japan Web", "desc": "빠른 입국 심사(웹)", "link": "https://www.vjw.digital.go.jp/"},
             {"name": "파파고", "desc": "이미지 번역 및 통역", "link": "https://play.google.com/store/apps/details?id=com.naver.labs.translator"}
         ],
-        "tips": ["나리타 익스프레스 예약 권장", "편의점 ATM 수수료 저렴"],
-        "warnings": ["지하철 내 통화 금지", "길거리 흡연 엄금"],
+        "tips": ["스이카/파스모 IC카드 필수", "Visit Japan Web 사전등록", "도쿄 서브웨이 티켓 활용", "편의점 ATM 수수료 저렴"],
+        "warnings": ["지하철 내 통화 금지", "길거리 흡연 엄금", "카드 결제시 PIN 번호 필요"],
         "phrases": COMMON_PHRASES["japan"],
         "shopping": ["퍼펙트휩", "돈키호테 산토리 위스키", "도쿄 바나나", "샤론파스", "닷사이 23 사케", "히메이론 안약"]
     },
@@ -290,8 +290,8 @@ COUNTRIES = {
             {"name": "오사카 e-패스", "desc": "관광지 입장 및 교통", "link": "https://www.e-pass.osaka-info.jp/kr/?utm_source=osp.osaka-info&utm_medium=referral&utm_campaign=shu_link"},
             {"name": "파파고", "desc": "이미지 번역 및 통역", "link": "https://play.google.com/store/apps/details?id=com.naver.labs.translator"}
         ],
-        "tips": ["주유패스로 관광지 무료입장", "도톤보리 크루즈 예약 필수"],
-        "warnings": ["에스컬레이터 오른쪽 서기", "난바역 출구 주의"],
+        "tips": ["e-패스로 관광지 무료입장", "USJ 오픈런 필수", "Visit Japan Web 사전등록", "한큐백화점 외국인 5% 쿠폰"],
+        "warnings": ["에스컬레이터 오른쪽 서기", "공공장소 흡연 금지(1000엔 과태료)", "카드 결제시 PIN 번호 필요"],
         "phrases": COMMON_PHRASES["japan"],
         "shopping": ["리쿠로오지상 치즈케이크", "한큐백화점 손수건", "551호라이 만두", "오사카 한정 키티 인형"]
     },

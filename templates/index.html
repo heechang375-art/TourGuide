@@ -372,19 +372,38 @@
 
         // 언어 변경
         function changeLang(langCode) {
-            userSelectedLang = langCode;
+            console.log('Changing language to:', langCode);
             
-            // 쿠키 설정
-            setCookie('googtrans', `/ko/${langCode}`, 365);
+            // 모든 쿠키 삭제
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i];
+                const eqPos = cookie.indexOf("=");
+                const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+                
+                // 모든 경로와 도메인에 대해 삭제 시도
+                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=." + window.location.hostname;
+            }
+            
+            console.log('All cookies cleared');
+            
+            // 새 쿠키 설정
             setCookie('selectedLang', langCode, 365);
             
-            // Google Translate 트리거
-            triggerGoogleTranslate(langCode);
+            // 한국어가 아니면 googtrans 쿠키 설정
+            if (langCode !== 'ko') {
+                setCookie('googtrans', `/ko/${langCode}`, 365);
+                console.log('Set googtrans to:', `/ko/${langCode}`);
+            } else {
+                console.log('Korean selected - no googtrans needed');
+            }
             
-            // 환율 및 버튼 업데이트
-            updateRateDisplay();
-            updateTranslateButtons();
-            updateCalcCurrencies();
+            // 페이지 새로고침
+            setTimeout(() => {
+                window.location.reload();
+            }, 200);
         }
 
         // 여행지 변경
@@ -429,6 +448,23 @@
 
             // 저장된 언어 불러오기
             const savedLang = getCookie('selectedLang');
+            const googtransCookie = getCookie('googtrans');
+            
+            console.log('Saved lang:', savedLang);
+            console.log('Googtrans cookie:', googtransCookie);
+            
+            // 쿠키 불일치 확인 및 수정
+            if (savedLang && googtransCookie) {
+                const expectedGoogtrans = `/ko/${savedLang}`;
+                if (googtransCookie !== expectedGoogtrans && savedLang !== 'ko') {
+                    console.log('Cookie mismatch detected, clearing googtrans');
+                    // googtrans 쿠키 삭제
+                    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
+                    // 새로 설정
+                    setCookie('googtrans', expectedGoogtrans, 365);
+                }
+            }
+            
             if (savedLang) {
                 userSelectedLang = savedLang;
             } else {
@@ -467,17 +503,16 @@
             const targetBtn = document.getElementById('targetLangBtn');
             const reverseBtn = document.getElementById('reverseBtn');
             
-            // 선택된 국가의 현지어 (도시 기반)
+            // 선택된 국가의 현지어
             const cityLang = countryLangMap[currentCountryId] || 'en';
             
-            // "현지어로" 버튼은 항상 선택된 국가의 언어로 번역
+            // "현지어로" 버튼: 항상 선택된 국가의 언어로 표시
             if (targetBtn) {
                 targetBtn.textContent = `${langNames[cityLang] || '현지어'}로`;
             }
             
-            // "한국어로" 버튼은 사용자가 선택한 UI 언어로 번역
+            // 두 번째 버튼: 사용자가 선택한 UI 언어로 표시
             if (reverseBtn) {
-                // 사용자가 선택한 언어로 변경
                 reverseBtn.textContent = `${langNames[userSelectedLang] || userSelectedLang}로`;
             }
         }

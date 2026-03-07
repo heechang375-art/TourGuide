@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Global Travel Manager</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260307-top-inline') }}">
     
     <script type="text/javascript">
         // 쿠키 설정 함수
@@ -16,10 +16,26 @@
         }
 
         function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
+            // Duplicate cookie names can exist with different scopes.
+            // Pick the first exact-name match safely.
+            const cookies = document.cookie ? document.cookie.split(';') : [];
+            for (let i = 0; i < cookies.length; i++) {
+                const item = cookies[i].trim();
+                if (item.startsWith(name + '=')) {
+                    return item.substring(name.length + 1);
+                }
+            }
             return null;
+        }
+
+        function clearCookie(name) {
+            const host = window.location.hostname;
+            const domains = [host, '.' + host];
+
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            for (let i = 0; i < domains.length; i++) {
+                document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${domains[i]}`;
+            }
         }
 
         function googleTranslateElementInit() {
@@ -42,44 +58,29 @@
 </head>
 <body>
     <header class="app-header">
-        <!-- 날씨 + 환율 카드 -->
-        <div class="info-cards">
-            <div class="info-card weather-card">
-                <div class="info-icon">
-                    <i class="fa-solid fa-cloud-sun"></i>
-                </div>
-                <div class="info-content">
-                    <div class="info-label">현지 날씨</div>
-                    <div class="info-value">{{ info.city }} {{ info.temp }}°C</div>
-                    <div class="info-sub">{{ info.weather_desc }}</div>
-                </div>
-            </div>
-            
-            <div class="info-card rate-card">
-                <div class="info-icon">
-                    <i class="fa-solid fa-coins"></i>
-                </div>
-                <div class="info-content">
-                    <div class="info-label">환율</div>
-                    <div class="info-value" id="rateDisplay">계산 중...</div>
-                    <div class="info-sub" id="rateCurrencyLabel"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 여행지 + 언어 선택 (한 줄) -->
-        <div class="selector-row">
-            <div class="selector-col">
-                <label class="selector-label">🌏 여행지</label>
-                <select class="compact-selector" id="countrySelector" onchange="changeCity(this.value)">
+        <div class="top-inline-row">
+            <div class="selector-inline">
+                <select class="compact-selector top-selector" id="countrySelector" onchange="changeCity(this.value)" aria-label="여행지 선택">
                     {% for id, c in countries.items() %}
                     <option value="{{ id }}" {% if id == selected_id %}selected{% endif %}>{{ c.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="selector-col">
-                <label class="selector-label">🗣️ 언어</label>
-                <select class="compact-selector" id="langSelector" onchange="changeLang(this.value)">
+
+            <div class="center-status">
+                <div class="status-chip weather-chip">
+                    <i class="fa-solid fa-cloud-sun"></i>
+                    <span>{{ info.city }} {{ info.temp }}°C {{ info.weather_desc }}</span>
+                </div>
+                <div class="status-chip rate-chip">
+                    <i class="fa-solid fa-coins"></i>
+                    <span id="rateDisplay">계산 중...</span>
+                    <small id="rateCurrencyLabel"></small>
+                </div>
+            </div>
+
+            <div class="selector-inline">
+                <select class="compact-selector top-selector" id="langSelector" onchange="changeLang(this.value)" aria-label="언어 선택">
                     <option value="ko">🇰🇷 한국어</option>
                     <option value="ja">🇯🇵 日本語</option>
                     <option value="vi">🇻🇳 Tiếng Việt</option>
@@ -131,41 +132,76 @@
                 </div>
             </div>
             
-            <!-- 여행 팁 (압축) -->
-            <div class="card compact-card">
-                <h3><i class="fa-solid fa-lightbulb"></i> 팁 & 주의사항</h3>
-                <div class="tip-compact">
-                    <strong>✅ 꿀팁</strong>
-                    <ul class="compact-list">{% for tip in info.tips %}<li>{{ tip }}</li>{% endfor %}</ul>
+            <div class="info-slider">
+                <div class="info-slider-nav" id="infoSliderNav">
+                    <button class="info-slider-btn active" onclick="goInfoSlide(0)">팁 · 주의</button>
+                    <button class="info-slider-btn" onclick="goInfoSlide(1)">앱 설치</button>
                 </div>
-                <div class="warning-compact">
-                    <strong>⚠️ 주의</strong>
-                    <ul class="compact-list">{% for warn in info.warnings %}<li>{{ warn }}</li>{% endfor %}</ul>
-                </div>
-            </div>
+                <div class="info-slider-track" id="infoSliderTrack" onscroll="syncInfoSlideNav()">
+                    <!-- 여행 팁/주의 (좌우 배치) -->
+                    <section class="info-slide">
+                        <div class="card compact-card info-section-card">
+                            <h3><i class="fa-solid fa-lightbulb"></i> 팁 & 주의사항</h3>
+                            <div class="tip-warning-grid">
+                                <div class="tip-compact">
+                                    <strong>✅ 꿀팁</strong>
+                                    <ul class="compact-list">{% for tip in info.tips %}<li>{{ tip }}</li>{% endfor %}</ul>
+                                </div>
+                                <div class="warning-compact">
+                                    <strong>⚠️ 주의</strong>
+                                    <ul class="compact-list">{% for warn in info.warnings %}<li>{{ warn }}</li>{% endfor %}</ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
 
-            <!-- 필수 앱 (압축) -->
-            <div class="card compact-card">
-                <h3><i class="fa-solid fa-mobile-screen-button"></i> 필수 앱</h3>
-                {% for app in info.apps %}
-                <div class="app-item-compact">
-                    <div class="app-icon-small">
-                        <i class="fa-solid fa-mobile-screen"></i>
-                    </div>
-                    <div class="app-info-small">
-                        <strong>{{ app.name }}</strong>
-                        <small>{{ app.desc }}</small>
-                    </div>
-                    <a href="{{ app.link }}" target="_blank" class="app-btn-small">
-                        <i class="fa-solid fa-download"></i>
-                    </a>
+                    <!-- 필수 앱 -->
+                    <section class="info-slide">
+                        <div class="card compact-card info-section-card">
+                            <h3><i class="fa-solid fa-mobile-screen-button"></i> 필수 앱</h3>
+                            {% for app in info.apps %}
+                            <div class="app-item-compact">
+                                <div class="app-icon-small">
+                                    <i class="fa-solid fa-mobile-screen"></i>
+                                </div>
+                                <div class="app-info-small">
+                                    <strong>{{ app.name }}</strong>
+                                    <small>{{ app.desc }}</small>
+                                </div>
+                                <a href="{{ app.link }}" target="_blank" rel="noopener noreferrer" class="app-btn-small">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </section>
                 </div>
-                {% endfor %}
             </div>
         </div>
 
         <!-- 회화 탭 -->
         <div id="phrases" class="tab-content">
+            <div class="card compact-card allergy-card">
+                <h3><i class="fa-solid fa-shield-heart"></i> 알레르기 표현</h3>
+                <div class="allergy-row">
+                    <label for="allergySelector" class="allergy-label">알레르기 선택</label>
+                    <select id="allergySelector" class="compact-selector allergy-selector" onchange="updateAllergyPhrase()">
+                        <option value="shrimp">새우</option>
+                        <option value="crab">게</option>
+                        <option value="shellfish">조개/갑각류</option>
+                        <option value="peanut">땅콩</option>
+                        <option value="egg">계란</option>
+                        <option value="milk">우유</option>
+                        <option value="wheat">밀</option>
+                        <option value="buckwheat">메밀</option>
+                    </select>
+                </div>
+                <div class="allergy-phrase-box">
+                    <div class="allergy-ko" id="allergyKoPhrase"></div>
+                    <div class="allergy-local" id="allergyLocalPhrase"></div>
+                </div>
+            </div>
+
             <!-- 회화 카테고리 탭 -->
             <div class="phrase-tabs">
                 {% set categories = info.phrases.keys() | list %}
@@ -197,7 +233,7 @@
                 <h3><i class="fa-solid fa-cart-shopping"></i> 추천 쇼핑템</h3>
                 <div class="shopping-grid">
                     {% for item in info.shopping %}
-                    <a href="https://www.google.com/search?q={{ info.city }}+{{ item }}&tbm=isch" target="_blank" class="shop-item">
+                    <a href="https://www.google.com/search?q={{ info.city }}+{{ item }}&tbm=isch" target="_blank" rel="noopener noreferrer" class="shop-item">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <span>{{ item }}</span>
                     </a>
@@ -240,11 +276,12 @@
                 <h3><i class="fa-solid fa-list-check"></i> 여행 준비 체크리스트</h3>
                 {% for category, items in checklist.items() %}
                 <div class="checklist-category">
+                    {% set category_index = loop.index0 %}
                     <h4>{{ category }}</h4>
                     {% for item in items %}
                     <div class="checklist-item">
-                        <input type="checkbox" id="check{{ loop.index0 }}_{{ loop.index }}">
-                        <label for="check{{ loop.index0 }}_{{ loop.index }}">{{ item }}</label>
+                        <input type="checkbox" id="check{{ category_index }}_{{ loop.index0 }}">
+                        <label for="check{{ category_index }}_{{ loop.index0 }}">{{ item }}</label>
                     </div>
                     {% endfor %}
                 </div>
@@ -281,6 +318,17 @@
             'zh-CN': 'TWD',
             'zh-TW': 'TWD',
             'en': 'USD'
+        };
+
+        const allergyVocabulary = {
+            shrimp: { ko: '새우', ja: 'えび', vi: 'tôm', th: 'กุ้ง', 'zh-TW': '蝦', 'zh-CN': '虾', en: 'shrimp' },
+            crab: { ko: '게', ja: 'かに', vi: 'cua', th: 'ปู', 'zh-TW': '蟹', 'zh-CN': '蟹', en: 'crab' },
+            shellfish: { ko: '조개/갑각류', ja: '貝類・甲殻類', vi: 'động vật có vỏ', th: 'หอยและสัตว์เปลือกแข็ง', 'zh-TW': '貝類與甲殼類', 'zh-CN': '贝类和甲壳类', en: 'shellfish' },
+            peanut: { ko: '땅콩', ja: 'ピーナッツ', vi: 'đậu phộng', th: 'ถั่วลิสง', 'zh-TW': '花生', 'zh-CN': '花生', en: 'peanut' },
+            egg: { ko: '계란', ja: '卵', vi: 'trứng', th: 'ไข่', 'zh-TW': '雞蛋', 'zh-CN': '鸡蛋', en: 'egg' },
+            milk: { ko: '우유', ja: '牛乳', vi: 'sữa', th: 'นม', 'zh-TW': '牛奶', 'zh-CN': '牛奶', en: 'milk' },
+            wheat: { ko: '밀', ja: '小麦', vi: 'lúa mì', th: 'แป้งสาลี', 'zh-TW': '小麥', 'zh-CN': '小麦', en: 'wheat' },
+            buckwheat: { ko: '메밀', ja: 'そば', vi: 'kiều mạch', th: 'บัควีท', 'zh-TW': '蕎麥', 'zh-CN': '荞麦', en: 'buckwheat' }
         };
 
         // 현재 환율 데이터 저장
@@ -373,22 +421,11 @@
         // 언어 변경
         function changeLang(langCode) {
             console.log('Changing language to:', langCode);
-            
-            // 모든 쿠키 삭제
-            const cookies = document.cookie.split(";");
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i];
-                const eqPos = cookie.indexOf("=");
-                const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-                
-                // 모든 경로와 도메인에 대해 삭제 시도
-                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
-                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=." + window.location.hostname;
-            }
-            
-            console.log('All cookies cleared');
-            
+
+            // 필요한 쿠키만 정리
+            clearCookie('selectedLang');
+            clearCookie('googtrans');
+
             // 새 쿠키 설정
             setCookie('selectedLang', langCode, 365);
             
@@ -458,7 +495,7 @@
                 console.log('No saved language - defaulting to Korean');
                 // googtrans 쿠키가 있다면 삭제 (초기 로드시 한국어가 기본)
                 if (googtransCookie) {
-                    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+                    clearCookie('googtrans');
                     console.log('Cleared existing googtrans cookie');
                 }
                 userSelectedLang = 'ko';
@@ -472,7 +509,7 @@
                     if (googtransCookie !== expectedGoogtrans && savedLang !== 'ko') {
                         console.log('Cookie mismatch detected, clearing googtrans');
                         // googtrans 쿠키 삭제
-                        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+                        clearCookie('googtrans');
                         // 새로 설정
                         if (savedLang !== 'ko') {
                             setCookie('googtrans', expectedGoogtrans, 365);
@@ -496,7 +533,67 @@
             updateRateDisplay();
             updateTranslateButtons();
             updateCalcCurrencies();
+            syncInfoSlideNav();
+            updateAllergyPhrase();
         });
+
+        function goInfoSlide(index) {
+            const track = document.getElementById('infoSliderTrack');
+            if (!track) return;
+            track.scrollTo({
+                left: track.clientWidth * index,
+                behavior: 'smooth'
+            });
+            setActiveInfoSlideBtn(index);
+        }
+
+        function syncInfoSlideNav() {
+            const track = document.getElementById('infoSliderTrack');
+            if (!track) return;
+            const index = Math.round(track.scrollLeft / Math.max(track.clientWidth, 1));
+            setActiveInfoSlideBtn(index);
+        }
+
+        function setActiveInfoSlideBtn(index) {
+            const buttons = document.querySelectorAll('#infoSliderNav .info-slider-btn');
+            buttons.forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === index);
+            });
+        }
+
+        function getCityLanguage() {
+            return countryLangMap[currentCountryId] || 'en';
+        }
+
+        function buildAllergySentence(lang, itemText) {
+            const templates = {
+                ko: `${itemText} 알레르기가 있어요.`,
+                ja: `${itemText}アレルギーがあります。`,
+                vi: `Tôi bị dị ứng ${itemText}.`,
+                th: `ฉันแพ้${itemText}`,
+                'zh-CN': `我对${itemText}过敏。`,
+                'zh-TW': `我對${itemText}過敏。`,
+                en: `I am allergic to ${itemText}.`
+            };
+            return templates[lang] || templates.en;
+        }
+
+        function updateAllergyPhrase() {
+            const selector = document.getElementById('allergySelector');
+            const koPhrase = document.getElementById('allergyKoPhrase');
+            const localPhrase = document.getElementById('allergyLocalPhrase');
+            if (!selector || !koPhrase || !localPhrase) return;
+
+            const allergyKey = selector.value;
+            const vocab = allergyVocabulary[allergyKey];
+            if (!vocab) return;
+
+            const cityLang = getCityLanguage();
+            const localItem = vocab[cityLang] || vocab.en;
+
+            koPhrase.textContent = buildAllergySentence('ko', vocab.ko);
+            localPhrase.textContent = buildAllergySentence(cityLang, localItem);
+        }
 
         // 번역 버튼 텍스트 업데이트
         function updateTranslateButtons() {

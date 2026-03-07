@@ -29,9 +29,5 @@ def index():
                            selected_id=selected_id, days=days, hotel=hotel, addr=addr,
                            checklist=CHECKLIST_DATA)
 
-@app.route('/settings')
-def settings():
-    return render_template('setting.html')
-
 if __name__ == '__main__':
     app.run(debug=False)

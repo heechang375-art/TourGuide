@@ -9,98 +9,80 @@ body {
 /* Header Area */
 .app-header { 
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 20px; 
+    padding: 12px; 
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
-/* Weather + Exchange Rate Cards */
-.info-cards {
+/* Top Inline Header Row */
+.top-inline-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+}
+
+.selector-inline {
+    min-width: 0;
+}
+
+.top-selector {
+    min-height: 36px;
+    height: 36px;
+    padding: 6px 28px 6px 10px;
+    font-size: 12px;
+}
+
+.center-status {
+    min-width: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 6px;
 }
 
-.info-card {
+.status-chip {
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 16px;
-    padding: 12px;
+    border-radius: 10px;
+    padding: 6px 8px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    min-width: 0;
 }
 
-.info-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
+.status-chip i {
+    font-size: 12px;
 }
 
-.weather-card .info-icon {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: white;
+.weather-chip {
+    color: #f5576c;
 }
 
-.rate-card .info-icon {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    color: white;
+.rate-chip {
+    color: #2998ff;
 }
 
-.info-content {
-    flex: 1;
-}
-
-.info-label {
+.status-chip span {
     font-size: 11px;
-    color: #666;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 2px;
-}
-
-.info-value {
-    font-size: 15px;
     font-weight: 700;
     color: #1a1a1a;
-    margin-bottom: 2px;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.info-sub {
+.status-chip small {
     font-size: 10px;
-    color: #888;
-}
-
-/* Selector Row (Country + Language in one line) */
-.selector-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.selector-col {
-    display: flex;
-    flex-direction: column;
-}
-
-.selector-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 6px;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    font-weight: 600;
+    color: #666;
+    white-space: nowrap;
 }
 
 .compact-selector {
     width: 100%;
     padding: 10px 12px;
+    min-height: 44px;
     border-radius: 10px;
     border: none;
     background: white;
@@ -694,19 +676,19 @@ body {
     padding: 12px 16px;
     background: white;
     position: sticky;
-    top: 48px;
+    top: 60px;
     z-index: 100;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     -webkit-overflow-scrolling: touch;
 }
 
 .phrase-tab-btn {
-    padding: 8px 16px;
+    padding: 10px 18px;
     border: none;
     background: #f5f7fa;
     color: #666;
     border-radius: 20px;
-    font-size: 13px;
+    font-size: 18px;
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
@@ -737,17 +719,161 @@ body {
     border-radius: 12px;
     margin-bottom: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
 }
 
 .phrase-ko {
     font-weight: 700;
     font-size: 15px;
     color: #1a1a1a;
-    margin-bottom: 6px;
+    margin-bottom: 0;
+    line-height: 1.35;
+    text-align: center;
 }
 
 .phrase-local {
     font-size: 14px;
     color: #667eea;
     font-weight: 500;
+    line-height: 1.35;
+    text-align: center;
+}
+
+@media (max-width: 359px) {
+    .phrase-item-new {
+        grid-template-columns: 1fr;
+    }
+
+    .phrase-ko,
+    .phrase-local {
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+
+    .mobile-tabs {
+        min-height: 60px;
+    }
+
+    .top-inline-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr);
+        gap: 6px;
+    }
+
+    .btn-primary,
+    .btn-success {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+/* Info slider (tips/warnings <-> apps) */
+.info-slider {
+    margin: 0 12px 12px;
+    overflow: hidden;
+}
+
+.info-slider-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.info-slider-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #667eea;
+    background: #eef1ff;
+    cursor: pointer;
+}
+
+.info-slider-btn.active {
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.info-slider-track {
+    display: flex;
+    overflow-x: auto;
+    width: 100%;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+.info-slider-track::-webkit-scrollbar {
+    display: none;
+}
+
+.info-slider-track {
+    scrollbar-width: none;
+}
+
+.info-slide {
+    flex: 0 0 100%;
+    min-width: 100%;
+    width: 100%;
+    scroll-snap-align: start;
+}
+
+.info-section-card {
+    margin: 0;
+}
+
+.tip-warning-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* Allergy selector */
+.allergy-card {
+    margin-bottom: 8px;
+}
+
+.allergy-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.allergy-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #555;
+}
+
+.allergy-selector {
+    margin-bottom: 8px;
+}
+
+.allergy-phrase-box {
+    background: #f5f7fa;
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.allergy-ko {
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+}
+
+.allergy-local {
+    color: #667eea;
+    font-weight: 600;
 }

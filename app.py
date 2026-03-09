@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from data import COUNTRIES, CHECKLIST_DATA
 from utils import get_travel_info 
 
@@ -28,6 +28,23 @@ def index():
                            info=info, countries=COUNTRIES, 
                            selected_id=selected_id, days=days, hotel=hotel, addr=addr,
                            checklist=CHECKLIST_DATA)
+
+
+@app.route('/api/weather/<city_name>')
+def api_weather(city_name):
+    try:
+        import os, requests as req
+        W_KEY = os.getenv("WEATHER_API_KEY")
+        w_url = f"https://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={W_KEY}&units=metric"
+        w_data = req.get(w_url, timeout=5).json()
+        if w_data.get('main'):
+            from utils import translate_weather
+            temp = round(w_data['main']['temp'])
+            desc = translate_weather(w_data['weather'][0]['main'])
+            return jsonify({'temp': temp, 'desc': desc})
+    except Exception as e:
+        print(f"Weather API error: {e}")
+    return jsonify({'temp': '-', 'desc': '오류'})
 
 if __name__ == '__main__':
     app.run(debug=False)

@@ -5,77 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Global Travel Manager</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260307-top-inline') }}">
-    
-    <script type="text/javascript">
-        // 쿠키 설정 함수
-        function setCookie(name, value, days) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-            document.cookie = name + '=' + value + ';expires=' + expires.toUTCString() + ';path=/';
-        }
-
-        function getCookie(name) {
-            // Duplicate cookie names can exist with different scopes.
-            // Pick the first exact-name match safely.
-            const cookies = document.cookie ? document.cookie.split(';') : [];
-            for (let i = 0; i < cookies.length; i++) {
-                const item = cookies[i].trim();
-                if (item.startsWith(name + '=')) {
-                    return item.substring(name.length + 1);
-                }
-            }
-            return null;
-        }
-
-        function clearCookie(name) {
-            const host = window.location.hostname;
-            const domains = [host, '.' + host];
-
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-            for (let i = 0; i < domains.length; i++) {
-                document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${domains[i]}`;
-            }
-        }
-
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'ko',
-                includedLanguages: 'ko,ja,vi,th,zh-CN,zh-TW,en',
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                autoDisplay: false
-            }, 'google_translate_element');
-        }
-    </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-    
-    <style>
-        #google_translate_element { display: none !important; }
-        body { top: 0 !important; }
-        .skiptranslate, .goog-te-banner-frame, #goog-gt-tt { display: none !important; }
-        font { background-color: transparent !important; box-shadow: none !important; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <header class="app-header">
         <div class="top-inline-row">
             <div class="selector-inline">
                 <select class="compact-selector top-selector" id="countrySelector" onchange="changeCity(this.value)" aria-label="여행지 선택">
-                    {% for id, c in countries.items() %}
-                    <option value="{{ id }}" {% if id == selected_id %}selected{% endif %}>{{ c.name }}</option>
-                    {% endfor %}
+                    <option value="tokyo">일본 (도쿄)</option>
+                    <option value="osaka" selected>일본 (오사카)</option>
+                    <option value="fukuoka">일본 (후쿠오카)</option>
+                    <option value="danang">베트남 (다낭)</option>
+                    <option value="hochiminh">베트남 (호치민)</option>
+                    <option value="bangkok">태국 (방콕)</option>
+                    <option value="taipei">대만 (타이베이)</option>
+                    <option value="hongkong">홍콩</option>
+                    <option value="nyc">미국 (뉴욕)</option>
+                    <option value="seoul">대한민국 (서울)</option>
                 </select>
             </div>
 
             <div class="center-status">
                 <div class="status-chip weather-chip">
                     <i class="fa-solid fa-cloud-sun"></i>
-                    <span>{{ info.city }} {{ info.temp }}°C {{ info.weather_desc }}</span>
+                    <div class="chip-content">
+                        <span class="chip-main" id="weatherDisplay">-</span>
+                    </div>
                 </div>
                 <div class="status-chip rate-chip">
                     <i class="fa-solid fa-coins"></i>
-                    <span id="rateDisplay">계산 중...</span>
-                    <small id="rateCurrencyLabel"></small>
+                    <div class="chip-content">
+                        <span class="chip-main" id="rateDisplay" data-i18n-loading="계산 중...">계산 중...</span>
+                        <small id="rateCurrencyLabel"></small>
+                    </div>
                 </div>
             </div>
 
@@ -93,98 +55,77 @@
         </div>
     </header>
 
-    <div id="google_translate_element"></div>
-
     <nav class="mobile-tabs">
-        <button onclick="showTab(event, 'info')" class="tab-btn active">
+        <button onclick="showTab(event,'info')" class="tab-btn active">
             <i class="fa-solid fa-circle-info"></i>
-            <span>정보</span>
+            <span data-i18n="tab_info">정보</span>
         </button>
-        <button onclick="showTab(event, 'phrases')" class="tab-btn">
+        <button onclick="showTab(event,'phrases')" class="tab-btn">
             <i class="fa-solid fa-comments"></i>
-            <span>회화</span>
+            <span data-i18n="tab_phrases">회화</span>
         </button>
-        <button onclick="showTab(event, 'shopping')" class="tab-btn">
+        <button onclick="showTab(event,'shopping')" class="tab-btn">
             <i class="fa-solid fa-bag-shopping"></i>
-            <span>쇼핑</span>
+            <span data-i18n="tab_shopping">쇼핑</span>
         </button>
-        <button onclick="showTab(event, 'calc')" class="tab-btn">
+        <button onclick="showTab(event,'calc')" class="tab-btn">
             <i class="fa-solid fa-calculator"></i>
-            <span>환율</span>
+            <span data-i18n="tab_calc">환율</span>
         </button>
-        <button onclick="showTab(event, 'todo')" class="tab-btn">
+        <button onclick="showTab(event,'todo')" class="tab-btn">
             <i class="fa-solid fa-list-check"></i>
-            <span>체크</span>
+            <span data-i18n="tab_check">체크</span>
         </button>
     </nav>
 
     <main class="content-area">
-        <!-- 정보 탭 -->
         <div id="info" class="tab-content active">
-            <!-- 번역기 (압축) -->
             <div class="card compact-card">
-                <h3><i class="fa-solid fa-language"></i> 번역기</h3>
-                <textarea id="sourceText" class="trans-input-compact" placeholder="번역할 내용 입력..."></textarea>
+                <h3><i class="fa-solid fa-language"></i> <span data-i18n="translator_title">번역기</span></h3>
+                <textarea id="sourceText" class="trans-input-compact" data-i18n-placeholder="translator_placeholder" placeholder="번역할 내용 입력..."></textarea>
                 <div id="transResult" class="trans-output-compact" style="display:none;"></div>
                 <div class="trans-btn-grid">
                     <button onclick="translateAction('target')" class="btn-primary" id="targetLangBtn">현지어로</button>
-                    <button onclick="translateAction('reverse')" class="btn-success" id="reverseBtn">한국어로</button>
+                    <button onclick="translateAction('reverse')" class="btn-success" id="reverseBtn" data-i18n="btn_to_ui">한국어로</button>
                 </div>
             </div>
-            
+
             <div class="info-slider">
                 <div class="info-slider-nav" id="infoSliderNav">
-                    <button class="info-slider-btn active" onclick="goInfoSlide(0)">팁 · 주의</button>
-                    <button class="info-slider-btn" onclick="goInfoSlide(1)">앱 설치</button>
+                    <button class="info-slider-btn active" onclick="goInfoSlide(0)" data-i18n="slide_tips">팁 · 주의</button>
+                    <button class="info-slider-btn" onclick="goInfoSlide(1)" data-i18n="slide_apps">앱 설치</button>
                 </div>
                 <div class="info-slider-track" id="infoSliderTrack" onscroll="syncInfoSlideNav()">
-                    <!-- 여행 팁/주의 (좌우 배치) -->
                     <section class="info-slide">
                         <div class="card compact-card info-section-card">
-                            <h3><i class="fa-solid fa-lightbulb"></i> 팁 & 주의사항</h3>
+                            <h3><i class="fa-solid fa-lightbulb"></i> <span data-i18n="tips_title">팁 & 주의사항</span></h3>
                             <div class="tip-warning-grid">
                                 <div class="tip-compact">
-                                    <strong>✅ 꿀팁</strong>
-                                    <ul class="compact-list">{% for tip in info.tips %}<li>{{ tip }}</li>{% endfor %}</ul>
+                                    <strong data-i18n="tips_header">✅ 꿀팁</strong>
+                                    <ul class="compact-list" id="tipsList"></ul>
                                 </div>
                                 <div class="warning-compact">
-                                    <strong>⚠️ 주의</strong>
-                                    <ul class="compact-list">{% for warn in info.warnings %}<li>{{ warn }}</li>{% endfor %}</ul>
+                                    <strong data-i18n="warnings_header">⚠️ 주의</strong>
+                                    <ul class="compact-list" id="warningsList"></ul>
                                 </div>
                             </div>
                         </div>
                     </section>
-
-                    <!-- 필수 앱 -->
                     <section class="info-slide">
                         <div class="card compact-card info-section-card">
-                            <h3><i class="fa-solid fa-mobile-screen-button"></i> 필수 앱</h3>
-                            {% for app in info.apps %}
-                            <div class="app-item-compact">
-                                <div class="app-icon-small">
-                                    <i class="fa-solid fa-mobile-screen"></i>
-                                </div>
-                                <div class="app-info-small">
-                                    <strong>{{ app.name }}</strong>
-                                    <small>{{ app.desc }}</small>
-                                </div>
-                                <a href="{{ app.link }}" target="_blank" rel="noopener noreferrer" class="app-btn-small">
-                                    <i class="fa-solid fa-download"></i>
-                                </a>
-                            </div>
-                            {% endfor %}
+                            <h3><i class="fa-solid fa-mobile-screen-button"></i> <span data-i18n="apps_title">필수 앱</span></h3>
+                            <div id="appsList"></div>
                         </div>
                     </section>
                 </div>
             </div>
         </div>
 
-        <!-- 회화 탭 -->
         <div id="phrases" class="tab-content">
             <div class="card compact-card allergy-card">
-                <h3><i class="fa-solid fa-shield-heart"></i> 알레르기 표현</h3>
+                <h3><i class="fa-solid fa-shield-heart"></i> <span data-i18n="allergy_title">알레르기 표현</span></h3>
                 <div class="allergy-row">
-                    <label for="allergySelector" class="allergy-label">알레르기 선택</label>
+                    <label for="allergySelector" class="allergy-label" data-i18n="allergy_label">알레르기 선택</label>
                     <select id="allergySelector" class="compact-selector allergy-selector" onchange="updateAllergyPhrase()">
                         <option value="shrimp">새우</option>
                         <option value="crab">게</option>
@@ -201,498 +142,823 @@
                     <div class="allergy-local" id="allergyLocalPhrase"></div>
                 </div>
             </div>
-
-            <!-- 회화 카테고리 탭 -->
-            <div class="phrase-tabs">
-                {% set categories = info.phrases.keys() | list %}
-                {% for cat in categories %}
-                <button class="phrase-tab-btn {% if loop.first %}active{% endif %}" onclick="showPhraseTab(event, 'cat{{ loop.index0 }}')">
-                    {{ cat.split(' ')[0] }}
-                </button>
-                {% endfor %}
-            </div>
-
-            <!-- 회화 내용 -->
-            {% for cat, items in info.phrases.items() %}
-            <div id="cat{{ loop.index0 }}" class="phrase-tab-content {% if loop.first %}active{% endif %}">
-                <div class="phrase-card-new">
-                    {% for p in items %}
-                    <div class="phrase-item-new">
-                        <div class="phrase-ko">{{ p.ko }}</div>
-                        <div class="phrase-local">{{ p.local }}</div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
+            <div class="phrase-tabs" id="phraseTabs"></div>
+            <div id="phraseContents"></div>
         </div>
 
-        <!-- 쇼핑 탭 -->
         <div id="shopping" class="tab-content">
             <div class="card">
-                <h3><i class="fa-solid fa-cart-shopping"></i> 추천 쇼핑템</h3>
-                <div class="shopping-grid">
-                    {% for item in info.shopping %}
-                    <a href="https://www.google.com/search?q={{ info.city }}+{{ item }}&tbm=isch" target="_blank" rel="noopener noreferrer" class="shop-item">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <span>{{ item }}</span>
-                    </a>
-                    {% endfor %}
-                </div>
+                <h3><i class="fa-solid fa-cart-shopping"></i> <span data-i18n="shopping_title">추천 쇼핑템</span></h3>
+                <div class="shopping-grid" id="shoppingGrid"></div>
             </div>
         </div>
 
-        <!-- 환율 계산기 탭 -->
         <div id="calc" class="tab-content">
             <div class="card">
-                <h3><i class="fa-solid fa-calculator"></i> 환율 계산기</h3>
+                <h3><i class="fa-solid fa-calculator"></i> <span data-i18n="calc_title">환율 계산기</span></h3>
                 <div class="calc-box-improved">
                     <div class="calc-row">
-                        <div class="currency-label" id="calcSourceCurrency">{{ info.currency }}</div>
+                        <div class="currency-label" id="calcSourceCurrency">JPY</div>
                         <input type="text" id="foreignInput" class="calc-input" placeholder="0" inputmode="numeric">
                     </div>
-                    <div class="calc-arrow">
-                        <i class="fa-solid fa-arrow-down"></i>
-                    </div>
+                    <div class="calc-arrow"><i class="fa-solid fa-arrow-down"></i></div>
                     <div class="calc-row">
                         <div class="currency-label" id="calcTargetCurrency">KRW</div>
                         <input type="text" id="krwOutput" class="calc-output" readonly placeholder="0">
                     </div>
                     <button onclick="calculateExchange()" class="calc-btn">
                         <i class="fa-solid fa-calculator"></i>
-                        계산하기
+                        <span data-i18n="calc_btn">계산하기</span>
                     </button>
                     <div class="calc-unit-info" id="calcUnitInfo" style="display:none;">
                         <i class="fa-solid fa-circle-info"></i>
-                        <span><strong id="calcUnitCurrency"></strong>는 100 단위로만 환전 가능합니다</span>
+                        <span id="calcUnitMsg"></span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 체크리스트 탭 -->
         <div id="todo" class="tab-content">
             <div class="card">
-                <h3><i class="fa-solid fa-list-check"></i> 여행 준비 체크리스트</h3>
-                {% for category, items in checklist.items() %}
-                <div class="checklist-category">
-                    {% set category_index = loop.index0 %}
-                    <h4>{{ category }}</h4>
-                    {% for item in items %}
-                    <div class="checklist-item">
-                        <input type="checkbox" id="check{{ category_index }}_{{ loop.index0 }}">
-                        <label for="check{{ category_index }}_{{ loop.index0 }}">{{ item }}</label>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endfor %}
+                <h3><i class="fa-solid fa-list-check"></i> <span data-i18n="checklist_title">여행 준비 체크리스트</span></h3>
+                <div class="phrase-tabs" id="checklistTabs"></div>
+                <div id="checklistContents"></div>
             </div>
         </div>
     </main>
 
     <script>
-        const currentRate = {{ info.rate_calc }};
-        const currentCurrency = "{{ info.currency }}";
-        let userSelectedLang = 'ko';
-        const currentCountryId = "{{ selected_id }}";
+    // ============================================================
+    // 1. i18n 딕셔너리 (Google Translate 완전 제거)
+    // ============================================================
+    const I18N = {
+        ko: {
+            tab_info:'정보', tab_phrases:'회화', tab_shopping:'쇼핑', tab_calc:'환율', tab_check:'체크',
+            weather_label:'날씨', rate_label:'환율',
+            translator_title:'번역기', translator_placeholder:'번역할 내용 입력...',
+            btn_to_local:'{lang}로', btn_to_ui:'한국어로',
+            tips_title:'팁 & 주의사항', tips_header:'✅ 꿀팁', warnings_header:'⚠️ 주의',
+            apps_title:'필수 앱', slide_tips:'팁 · 주의', slide_apps:'앱 설치',
+            allergy_title:'알레르기 표현', allergy_label:'알레르기 선택',
+            shopping_title:'추천 쇼핑템', calc_title:'환율 계산기', calc_btn:'계산하기',
+            calc_unit_msg:'{curr}는 {unit} 단위로만 환전 가능합니다',
+            checklist_title:'여행 준비 체크리스트', same_currency:'(같은 통화)',
+            alert_empty:'번역할 내용을 입력해주세요.',
+            alert_translate_error:'번역 중 오류가 발생했습니다.',
+            alert_enter_amount:'금액을 입력해주세요.',
+            alert_unit_adjust:'{curr}는 {unit}단위로만 환전 가능합니다.\n{val}으로 조정되었습니다.'
+        },
+        ja: {
+            tab_info:'情報', tab_phrases:'会話', tab_shopping:'ショッピング', tab_calc:'為替', tab_check:'チェック',
+            weather_label:'天気', rate_label:'為替',
+            translator_title:'翻訳機', translator_placeholder:'翻訳する内容を入力...',
+            btn_to_local:'{lang}へ', btn_to_ui:'日本語へ',
+            tips_title:'ヒント & 注意', tips_header:'✅ ヒント', warnings_header:'⚠️ 注意',
+            apps_title:'必須アプリ', slide_tips:'ヒント・注意', slide_apps:'アプリ',
+            allergy_title:'アレルギー表現', allergy_label:'アレルギー選択',
+            shopping_title:'おすすめショッピング', calc_title:'為替計算機', calc_btn:'計算する',
+            calc_unit_msg:'{curr}は{unit}単位のみ両替可能です',
+            checklist_title:'旅行準備チェックリスト', same_currency:'(同じ通貨)',
+            alert_empty:'翻訳する内容を入力してください。',
+            alert_translate_error:'翻訳中にエラーが発生しました。',
+            alert_enter_amount:'金額を入力してください。',
+            alert_unit_adjust:'{curr}は{unit}単位のみ両替可能です。\n{val}に調整されました。'
+        },
+        vi: {
+            tab_info:'Thông tin', tab_phrases:'Hội thoại', tab_shopping:'Mua sắm', tab_calc:'Tỷ giá', tab_check:'Danh sách',
+            weather_label:'Thời tiết', rate_label:'Tỷ giá',
+            translator_title:'Dịch thuật', translator_placeholder:'Nhập nội dung cần dịch...',
+            btn_to_local:'Sang {lang}', btn_to_ui:'Sang Tiếng Việt',
+            tips_title:'Mẹo & Lưu ý', tips_header:'✅ Mẹo hay', warnings_header:'⚠️ Lưu ý',
+            apps_title:'Ứng dụng cần thiết', slide_tips:'Mẹo · Lưu ý', slide_apps:'Cài ứng dụng',
+            allergy_title:'Biểu đạt dị ứng', allergy_label:'Chọn dị ứng',
+            shopping_title:'Mua sắm đề xuất', calc_title:'Máy tính tỷ giá', calc_btn:'Tính toán',
+            calc_unit_msg:'{curr} chỉ đổi được bội số {unit}',
+            checklist_title:'Danh sách chuẩn bị', same_currency:'(Cùng tiền tệ)',
+            alert_empty:'Vui lòng nhập nội dung cần dịch.',
+            alert_translate_error:'Đã xảy ra lỗi khi dịch.',
+            alert_enter_amount:'Vui lòng nhập số tiền.',
+            alert_unit_adjust:'{curr} chỉ đổi bội số {unit}.\nĐã điều chỉnh thành {val}.'
+        },
+        th: {
+            tab_info:'ข้อมูล', tab_phrases:'สนทนา', tab_shopping:'ช้อปปิ้ง', tab_calc:'อัตราแลก', tab_check:'รายการ',
+            weather_label:'อากาศ', rate_label:'อัตราแลก',
+            translator_title:'แปลภาษา', translator_placeholder:'กรอกเนื้อหาที่ต้องการแปล...',
+            btn_to_local:'เป็น{lang}', btn_to_ui:'เป็นไทย',
+            tips_title:'เคล็ดลับ & คำเตือน', tips_header:'✅ เคล็ดลับ', warnings_header:'⚠️ คำเตือน',
+            apps_title:'แอปที่จำเป็น', slide_tips:'เคล็ดลับ·คำเตือน', slide_apps:'ติดตั้งแอป',
+            allergy_title:'การแสดงอาการแพ้', allergy_label:'เลือกอาการแพ้',
+            shopping_title:'ของแนะนำ', calc_title:'เครื่องคิดอัตราแลก', calc_btn:'คำนวณ',
+            calc_unit_msg:'{curr} แลกได้เฉพาะหน่วย {unit}',
+            checklist_title:'รายการเตรียมท่องเที่ยว', same_currency:'(สกุลเดียวกัน)',
+            alert_empty:'กรุณากรอกเนื้อหาที่ต้องการแปล',
+            alert_translate_error:'เกิดข้อผิดพลาดขณะแปล',
+            alert_enter_amount:'กรุณากรอกจำนวนเงิน',
+            alert_unit_adjust:'{curr} แลกได้เฉพาะหน่วย {unit}\nปรับเป็น {val} แล้ว'
+        },
+        'zh-CN': {
+            tab_info:'信息', tab_phrases:'会话', tab_shopping:'购物', tab_calc:'汇率', tab_check:'清单',
+            weather_label:'天气', rate_label:'汇率',
+            translator_title:'翻译器', translator_placeholder:'输入要翻译的内容...',
+            btn_to_local:'翻译成{lang}', btn_to_ui:'翻译成中文',
+            tips_title:'提示 & 注意', tips_header:'✅ 小贴士', warnings_header:'⚠️ 注意',
+            apps_title:'必备应用', slide_tips:'提示·注意', slide_apps:'安装应用',
+            allergy_title:'过敏表达', allergy_label:'选择过敏项',
+            shopping_title:'推荐购物', calc_title:'汇率计算器', calc_btn:'计算',
+            calc_unit_msg:'{curr}只能兑换{unit}的倍数',
+            checklist_title:'旅行准备清单', same_currency:'(相同货币)',
+            alert_empty:'请输入要翻译的内容。',
+            alert_translate_error:'翻译时出现错误。',
+            alert_enter_amount:'请输入金额。',
+            alert_unit_adjust:'{curr}只能兑换{unit}的倍数。\n已调整为{val}。'
+        },
+        'zh-TW': {
+            tab_info:'資訊', tab_phrases:'會話', tab_shopping:'購物', tab_calc:'匯率', tab_check:'清單',
+            weather_label:'天氣', rate_label:'匯率',
+            translator_title:'翻譯器', translator_placeholder:'輸入要翻譯的內容...',
+            btn_to_local:'翻譯成{lang}', btn_to_ui:'翻譯成繁體中文',
+            tips_title:'提示 & 注意', tips_header:'✅ 小提示', warnings_header:'⚠️ 注意',
+            apps_title:'必備應用', slide_tips:'提示·注意', slide_apps:'安裝應用',
+            allergy_title:'過敏表達', allergy_label:'選擇過敏項',
+            shopping_title:'推薦購物', calc_title:'匯率計算器', calc_btn:'計算',
+            calc_unit_msg:'{curr}只能兌換{unit}的倍數',
+            checklist_title:'旅行準備清單', same_currency:'(相同貨幣)',
+            alert_empty:'請輸入要翻譯的內容。',
+            alert_translate_error:'翻譯時出現錯誤。',
+            alert_enter_amount:'請輸入金額。',
+            alert_unit_adjust:'{curr}只能兌換{unit}的倍數。\n已調整為{val}。'
+        },
+        en: {
+            tab_info:'Info', tab_phrases:'Phrases', tab_shopping:'Shopping', tab_calc:'Exchange', tab_check:'Checklist',
+            weather_label:'Weather', rate_label:'Rate',
+            translator_title:'Translator', translator_placeholder:'Enter text to translate...',
+            btn_to_local:'To {lang}', btn_to_ui:'To English',
+            tips_title:'Tips & Warnings', tips_header:'✅ Tips', warnings_header:'⚠️ Warnings',
+            apps_title:'Essential Apps', slide_tips:'Tips · Warnings', slide_apps:'Install Apps',
+            allergy_title:'Allergy Phrases', allergy_label:'Select Allergy',
+            shopping_title:'Shopping Picks', calc_title:'Exchange Calculator', calc_btn:'Calculate',
+            calc_unit_msg:'{curr} can only be exchanged in {unit} units',
+            checklist_title:'Travel Checklist', same_currency:'(Same currency)',
+            alert_empty:'Please enter text to translate.',
+            alert_translate_error:'An error occurred during translation.',
+            alert_enter_amount:'Please enter an amount.',
+            alert_unit_adjust:'{curr} can only be exchanged in {unit} units.\nAdjusted to {val}.'
+        }
+    };
 
-        // 국가-언어-통화 매핑
-        const countryLangMap = {
-            'tokyo': 'ja',
-            'osaka': 'ja',
-            'fukuoka': 'ja',
-            'danang': 'vi',
-            'hochiminh': 'vi',
-            'bangkok': 'th',
-            'taipei': 'zh-TW',
-            'hongkong': 'zh-TW',
-            'nyc': 'en',
-            'seoul': 'ko'
+    // t() : 번역 헬퍼
+    function t(key, vars) {
+        const dict = I18N[userSelectedLang] || I18N.ko;
+        let str = dict[key] || I18N.ko[key] || key;
+        if (vars) Object.keys(vars).forEach(k => { str = str.replace(new RegExp('{' + k + '}', 'g'), vars[k]); });
+        return str;
+    }
+
+    // ============================================================
+    // 2. 앱 데이터 (서버 없이 JS에서 관리 - Jinja 템플릿 대체)
+    // ============================================================
+    const COUNTRIES_DATA = {
+        tokyo:     { name:'일본 (도쿄)',        currency:'JPY', city:'Tokyo',     lat:35.6762, lon:139.6503,
+            tips:['스이카/파스모 IC카드 필수','Visit Japan Web 권장','지하철 24/48/72시간권(800/1200/1500엔) 활용','편의점 ATM 수수료 저렴','문 앞보다 차내 안쪽 이동'],
+            warnings:['지하철 내 통화 자제','길거리 흡연 금지','카드 결제 PIN 필요','우선석 주변 휴대폰 매너 준수'],
+            apps:[{name:'구글맵',desc:'지도 및 길찾기',link:'https://play.google.com/store/apps/details?id=com.google.android.apps.maps'},{name:'Visit Japan Web',desc:'빠른 입국 심사(웹)',link:'https://www.vjw.digital.go.jp/'},{name:'파파고',desc:'이미지 번역 및 통역',link:'https://play.google.com/store/apps/details?id=com.naver.labs.translator'}],
+            shopping:['퍼펙트휩','돈키호테 산토리 위스키','도쿄 바나나','샤론파스','닷사이 23 사케','히메이론 안약'],
+            lang:'ja' },
+        osaka:     { name:'일본 (오사카)',       currency:'JPY', city:'Osaka',     lat:34.6937, lon:135.5023,
+            tips:['오사카 주유패스 운영 중(2026-03-31까지)','주유패스 1일 3,500엔 / 2일 5,000엔','USJ 오픈런 필수','Visit Japan Web 권장','한큐백화점 외국인 5% 쿠폰'],
+            warnings:['에스컬레이터 오른쪽 서기','공공장소 흡연 금지(1000엔 과태료)','카드 결제 PIN 필요','전자담배 길거리 흡연 규제'],
+            apps:[{name:'구글맵',desc:'지도 및 길찾기',link:'https://play.google.com/store/apps/details?id=com.google.android.apps.maps'},{name:'오사카 e-패스',desc:'관광지 입장 및 교통',link:'https://www.e-pass.osaka-info.jp/kr/'},{name:'파파고',desc:'이미지 번역 및 통역',link:'https://play.google.com/store/apps/details?id=com.naver.labs.translator'}],
+            shopping:['리쿠로오지상 치즈케이크','한큐백화점 손수건','551호라이 만두','오사카 한정 키티 인형'],
+            lang:'ja' },
+        fukuoka:   { name:'일본 (후쿠오카)',     currency:'JPY', city:'Fukuoka',   lat:33.5904, lon:130.4017,
+            tips:['공항-시내 지하철 접근 좋음','공항역→하카타 5분 / 텐진 약 10분','야타이 정찰제 매장 추천'],
+            warnings:['버스 뒤로 타서 정리권 뽑기','산큐패스 지참 확인'],
+            apps:[{name:'구글맵',desc:'지도 및 길찾기',link:'https://play.google.com/store/apps/details?id=com.google.android.apps.maps'},{name:'파파고',desc:'이미지 번역 및 통역',link:'https://play.google.com/store/apps/details?id=com.naver.labs.translator'}],
+            shopping:['명란 튜브','병아리 빵(히요코)','이치란 라멘 키트','후쿠야 명란젓'],
+            lang:'ja' },
+        danang:    { name:'베트남 (다낭)',       currency:'VND', city:'Da Nang',   lat:16.0544, lon:108.2022,
+            tips:['전기택시 Xanh SM 권장','한시장 2층 아오자이 흥정','비자 필요 시 공식 e-visa 포털 사용'],
+            warnings:['얼음 배탈 주의','수돗물 양치 금지','비자는 정부 공식 포털 사용'],
+            apps:[{name:'Grab',desc:'동남아 필수 택시 호출',link:'https://play.google.com/store/apps/details?id=com.grabtaxi.passenger'},{name:'구글맵',desc:'지도 및 길찾기',link:'https://play.google.com/store/apps/details?id=com.google.android.apps.maps'}],
+            shopping:['아치카페 코코넛커피','라탄백','탑젤리','안(An) 과자','G7 커피'],
+            lang:'vi' },
+        hochiminh: { name:'베트남 (호치민)',     currency:'VND', city:'Ho Chi Minh City', lat:10.8231, lon:106.6297,
+            tips:['루프탑 바 야경','벤탄시장 흥정 필수','Metro Line 1 운행 중'],
+            warnings:['오토바이 날치기 주의','길 건널 때 천천히'],
+            apps:[{name:'Grab',desc:'동남아 필수 택시 호출',link:'https://play.google.com/store/apps/details?id=com.grabtaxi.passenger'},{name:'구글맵',desc:'지도 및 길찾기',link:'https://play.google.com/store/apps/details?id=com.google.android.apps.maps'}],
+            shopping:['마루 초콜릿','콩카페 원두','캐슈넛','비나밋 건과일'],
+            lang:'vi' },
+        bangkok:   { name:'태국 (방콕)',         currency:'THB', city:'Bangkok',   lat:13.7563, lon:100.5018,
+            tips:['GLN QR 결제 편리','트래블월렛 사용 가능','TDAC 입국일 포함 3일 이내 제출'],
+            warnings:['왕실 비판 금지','사원 복장 규정 준수','TDAC QR 미수신 시 직원 문의'],
+            apps:[{name:'Grab',desc:'동남아 필수 택시 호출',link:'https://play.google.com/store/apps/details?id=com.grabtaxi.passenger'},{name:'Bolt',desc:'그랩보다 저렴한 택시',link:'https://play.google.com/store/apps/details?id=com.bolt.client'},{name:'구글맵',desc:'지도 및 길찾기',link:'https://play.google.com/store/apps/details?id=com.google.android.apps.maps'}],
+            shopping:['와코루 속옷','차트라뮤 홍차','폰즈 BB 파우더','야돔','나라야 파우치'],
+            lang:'th' },
+        taipei:    { name:'대만 (타이베이)',     currency:'TWD', city:'Taipei',    lat:25.0330, lon:121.5654,
+            tips:['이지카드 편의점 충전','타이베이 101 예약 권장'],
+            warnings:['지하철 내 취식 금지','MRT 위반 시 NT$1,500~7,500 벌금','무단횡단 벌금 주의'],
+            apps:[{name:'EasyWallet',desc:'이지카드 잔액 확인',link:'https://play.google.com/store/apps/details?id=com.easycard.wallet'},{name:'Uber',desc:'대만 택시 호출 앱',link:'https://play.google.com/store/apps/details?id=com.ubercab'},{name:'구글맵',desc:'지도 및 길찾기',link:'https://play.google.com/store/apps/details?id=com.google.android.apps.maps'}],
+            shopping:['치아더 펑리수','닥터큐 젤리','금문고량주','우드오르골','미미 크래커'],
+            lang:'zh-TW' },
+        hongkong:  { name:'홍콩',               currency:'HKD', city:'Hong Kong', lat:22.3193, lon:114.1694,
+            tips:['옥토퍼스는 교통·편의점 등 대부분 사용 가능','식당 합석 문화 흔함'],
+            warnings:['법정 금연구역 흡연 과태료 HK$3,000','MTR 유료구역 음식 최대 HK$2,000','쇼핑백 최소 HK$1 부과'],
+            apps:[{name:'Octopus',desc:'홍콩 필수 교통카드 앱',link:'https://play.google.com/store/apps/details?id=com.octopuscards.nfc_reader'},{name:'구글맵',desc:'지도 및 길찾기',link:'https://play.google.com/store/apps/details?id=com.google.android.apps.maps'}],
+            shopping:['제니쿠키','기화병가 팬더쿠키','백화유','립톤 밀크티'],
+            lang:'zh-TW' },
+        nyc:       { name:'미국 (뉴욕)',         currency:'USD', city:'New York',  lat:40.7128, lon:-74.0060,
+            tips:['팁 18~20% 기준','지하철/버스 OMNY 결제','OMNY 7일 내 12회 이후 무료'],
+            warnings:['밤늦은 공원 방문 자제','길거리 구걸 대응 자제'],
+            apps:[{name:'Uber',desc:'필수 차량 호출 앱',link:'https://play.google.com/store/apps/details?id=com.ubercab'},{name:'Yelp',desc:'현지인 맛집 리뷰',link:'https://play.google.com/store/apps/details?id=com.yelp.android'},{name:'Google Maps',desc:'지도 및 길찾기',link:'https://play.google.com/store/apps/details?id=com.google.android.apps.maps'}],
+            shopping:['트레이더조 에코백','글로시에 화장품','나이키 한정판','바스앤바디웍스'],
+            lang:'en' },
+        seoul:     { name:'대한민국 (서울)',     currency:'KRW', city:'Seoul',     lat:37.5665, lon:126.9780,
+            tips:['지하철·버스는 T-money 사용','소규모 매장 대비 소액 현금 지참','길찾기는 네이버지도 권장'],
+            warnings:['대부분 공공장소 흡연 금지','지하철 승하차 시 먼저 내리기','인도 위 배달 오토바이 주의'],
+            apps:[{name:'Naver Map',desc:'Best navigation in Korea',link:'https://play.google.com/store/apps/details?id=com.nhn.android.nmap'},{name:'Kakao T',desc:'Taxi and transport hailing',link:'https://play.google.com/store/apps/details?id=com.kakao.taxi'},{name:'Papago',desc:'Korean translation app',link:'https://play.google.com/store/apps/details?id=com.naver.labs.translator'}],
+            shopping:['K-Beauty (Olive Young)','HBAF Almonds','Character Socks','Soju / Makgeolli'],
+            lang:'ko' }
+    };
+
+    const CHECKLIST_DATA = {
+        '📋필수': ['여권 & 사본','항공권','여행자보험','숙소 예약확인서','비자(필요시)','트래블 월렛/로그 카드','현금(현지 통화)','e-SIM/도시락'],
+        '👗의류': ['속옷 & 양말','상의','하의/원피스','겉옷/가디건','잠옷','수영복(해변/풀빌라)','운동화','슬리퍼/샌들'],
+        '🔌전자기기': ['스마트폰 충전기','보조배터리','멀티 어댑터(돼지코)','노트북/태블릿','카메라 & 메모리카드','이어폰'],
+        '🧴세면/위생': ['개인 세면도구','선크림','스킨케어 기초','비상약','소화제','지사제','모기 기피제','마스크'],
+        '🎒짐 관리': ['여행용 캐리어/가방','압축 파우치','자물쇠','목 베개','안대 & 귀마개','우산/우비']
+    };
+
+    const CHECKLIST_CATEGORY_I18N = {
+        '📋필수':   { ko:'📋 필수',   ja:'📋 必需品',       vi:'📋 Thiết yếu',        th:'📋 จำเป็น',                'zh-CN':'📋 必备',   'zh-TW':'📋 必備',   en:'📋 Essentials' },
+        '👗의류':   { ko:'👗 의류',   ja:'👗 衣類',         vi:'👗 Quần áo',          th:'👗 เสื้อผ้า',              'zh-CN':'👗 服装',   'zh-TW':'👗 服裝',   en:'👗 Clothing' },
+        '🔌전자기기':{ ko:'🔌 전자기기',ja:'🔌 電子機器',    vi:'🔌 Thiết bị điện tử', th:'🔌 อุปกรณ์อิเล็กทรอนิกส์','zh-CN':'🔌 电子设备','zh-TW':'🔌 電子設備',en:'🔌 Electronics' },
+        '🧴세면/위생':{ ko:'🧴 세면/위생',ja:'🧴 洗面・衛生', vi:'🧴 Vệ sinh cá nhân',  th:'🧴 ของใช้ส่วนตัว',         'zh-CN':'🧴 洗漱卫生','zh-TW':'🧴 盥洗衛生',en:'🧴 Toiletries' },
+        '🎒짐 관리': { ko:'🎒 짐 관리',ja:'🎒 荷物管理',    vi:'🎒 Quản lý hành lý',  th:'🎒 จัดกระเป๋า',            'zh-CN':'🎒 行李管理','zh-TW':'🎒 行李管理',en:'🎒 Packing' }
+    };
+
+    const CHECKLIST_ITEM_I18N = {
+        '여권 & 사본':       { ko:'여권 & 사본',       ja:'パスポート & コピー',  vi:'Hộ chiếu & Bản sao',      th:'หนังสือเดินทาง & สำเนา',   'zh-CN':'护照 & 复印件',    'zh-TW':'護照 & 複印件',    en:'Passport & Copy' },
+        '항공권':            { ko:'항공권',            ja:'航空券',              vi:'Vé máy bay',               th:'ตั๋วเครื่องบิน',           'zh-CN':'机票',             'zh-TW':'機票',             en:'Flight Ticket' },
+        '여행자보험':         { ko:'여행자보험',         ja:'旅行保険',            vi:'Bảo hiểm du lịch',         th:'ประกันการเดินทาง',         'zh-CN':'旅行保险',          'zh-TW':'旅行保險',          en:'Travel Insurance' },
+        '숙소 예약확인서':    { ko:'숙소 예약확인서',    ja:'ホテル予約確認書',     vi:'Xác nhận đặt phòng',       th:'ใบยืนยันการจองที่พัก',     'zh-CN':'住宿预订确认书',     'zh-TW':'住宿預訂確認書',     en:'Hotel Confirmation' },
+        '비자(필요시)':       { ko:'비자(필요시)',       ja:'ビザ(必要な場合)',     vi:'Visa (nếu cần)',           th:'วีซ่า (ถ้าจำเป็น)',        'zh-CN':'签证(如需)',        'zh-TW':'簽證(如需)',        en:'Visa (if needed)' },
+        '트래블 월렛/로그 카드':{ ko:'트래블 월렛/로그 카드',ja:'トラベルカード',   vi:'Thẻ du lịch',              th:'บัตรท่องเที่ยว',           'zh-CN':'旅行钱包/卡',       'zh-TW':'旅行錢包/卡',       en:'Travel Wallet/Card' },
+        '현금(현지 통화)':    { ko:'현금(현지 통화)',    ja:'現地通貨の現金',       vi:'Tiền mặt (tiền địa phương)',th:'เงินสด (สกุลเงินท้องถิ่น)','zh-CN':'现金(当地货币)',     'zh-TW':'現金(當地貨幣)',     en:'Cash (local currency)' },
+        'e-SIM/도시락':      { ko:'e-SIM/도시락',      ja:'e-SIM/ポケットWiFi',  vi:'e-SIM/WiFi túi',           th:'e-SIM/WiFi พกพา',          'zh-CN':'e-SIM/随身WiFi',   'zh-TW':'e-SIM/隨身WiFi',   en:'e-SIM/Pocket WiFi' },
+        '속옷 & 양말':       { ko:'속옷 & 양말',       ja:'下着 & 靴下',          vi:'Đồ lót & Tất',             th:'ชุดชั้นในและถุงเท้า',       'zh-CN':'内衣 & 袜子',       'zh-TW':'內衣 & 襪子',       en:'Underwear & Socks' },
+        '상의':              { ko:'상의',              ja:'トップス',             vi:'Áo',                       th:'เสื้อ',                    'zh-CN':'上衣',             'zh-TW':'上衣',             en:'Tops' },
+        '하의/원피스':        { ko:'하의/원피스',        ja:'ボトムス/ワンピース',  vi:'Quần/Váy liền',            th:'กางเกง/ชุดเดรส',           'zh-CN':'下装/连衣裙',       'zh-TW':'下裝/連衣裙',       en:'Bottoms/Dress' },
+        '겉옷/가디건':        { ko:'겉옷/가디건',        ja:'アウター/カーディガン',vi:'Áo khoác/Cardigan',        th:'เสื้อคลุม/คาร์ดิแกน',     'zh-CN':'外套/开衫',         'zh-TW':'外套/開衫',         en:'Jacket/Cardigan' },
+        '잠옷':              { ko:'잠옷',              ja:'パジャマ',             vi:'Đồ ngủ',                   th:'ชุดนอน',                  'zh-CN':'睡衣',             'zh-TW':'睡衣',             en:'Pajamas' },
+        '수영복(해변/풀빌라)': { ko:'수영복(해변/풀빌라)',ja:'水着(ビーチ/プール)', vi:'Đồ bơi (bãi biển/hồ bơi)',th:'ชุดว่ายน้ำ (ชายหาด/พูล)', 'zh-CN':'泳装(海滩/泳池)',    'zh-TW':'泳裝(海灘/泳池)',    en:'Swimwear' },
+        '운동화':            { ko:'운동화',            ja:'スニーカー',            vi:'Giày thể thao',            th:'รองเท้าผ้าใบ',             'zh-CN':'运动鞋',            'zh-TW':'運動鞋',            en:'Sneakers' },
+        '슬리퍼/샌들':        { ko:'슬리퍼/샌들',        ja:'スリッパ/サンダル',    vi:'Dép/Xăng đan',             th:'รองเท้าแตะ/รัดส้น',        'zh-CN':'拖鞋/凉鞋',         'zh-TW':'拖鞋/涼鞋',         en:'Slippers/Sandals' },
+        '스마트폰 충전기':    { ko:'스마트폰 충전기',    ja:'スマホ充電器',          vi:'Sạc điện thoại',           th:'ที่ชาร์จโทรศัพท์',         'zh-CN':'手机充电器',         'zh-TW':'手機充電器',         en:'Phone Charger' },
+        '보조배터리':         { ko:'보조배터리',         ja:'モバイルバッテリー',    vi:'Pin dự phòng',             th:'พาวเวอร์แบงค์',            'zh-CN':'移动电源',          'zh-TW':'行動電源',          en:'Power Bank' },
+        '멀티 어댑터(돼지코)':{ ko:'멀티 어댑터(돼지코)',ja:'マルチアダプター',     vi:'Bộ chuyển đổi đa năng',   th:'อะแดปเตอร์หลายระบบ',       'zh-CN':'多功能转接头',       'zh-TW':'多功能轉接頭',       en:'Multi Adapter' },
+        '노트북/태블릿':      { ko:'노트북/태블릿',      ja:'ノートPC/タブレット',  vi:'Laptop/Máy tính bảng',     th:'แล็ปท็อป/แท็บเล็ต',        'zh-CN':'笔记本/平板',       'zh-TW':'筆電/平板',         en:'Laptop/Tablet' },
+        '카메라 & 메모리카드':{ ko:'카메라 & 메모리카드',ja:'カメラ & メモリカード',vi:'Máy ảnh & Thẻ nhớ',        th:'กล้องและเมมโมรี่การ์ด',    'zh-CN':'相机 & 存储卡',      'zh-TW':'相機 & 記憶卡',      en:'Camera & Memory Card' },
+        '이어폰':            { ko:'이어폰',            ja:'イヤホン',             vi:'Tai nghe',                 th:'หูฟัง',                   'zh-CN':'耳机',             'zh-TW':'耳機',             en:'Earphones' },
+        '개인 세면도구':      { ko:'개인 세면도구',      ja:'洗面用具',             vi:'Đồ vệ sinh cá nhân',       th:'อุปกรณ์อาบน้ำส่วนตัว',     'zh-CN':'个人洗漱用品',       'zh-TW':'個人盥洗用品',       en:'Toiletries' },
+        '선크림':            { ko:'선크림',            ja:'日焼け止め',            vi:'Kem chống nắng',           th:'ครีมกันแดด',               'zh-CN':'防晒霜',            'zh-TW':'防曬乳',            en:'Sunscreen' },
+        '스킨케어 기초':      { ko:'스킨케어 기초',      ja:'基礎化粧品',            vi:'Dưỡng da cơ bản',          th:'ผลิตภัณฑ์บำรุงผิว',        'zh-CN':'基础护肤品',         'zh-TW':'基礎保養品',         en:'Basic Skincare' },
+        '비상약':            { ko:'비상약',            ja:'常備薬',               vi:'Thuốc dự phòng',           th:'ยาฉุกเฉิน',                'zh-CN':'急救药品',          'zh-TW':'急救藥品',          en:'Emergency Medicine' },
+        '소화제':            { ko:'소화제',            ja:'胃腸薬',               vi:'Thuốc tiêu hóa',           th:'ยาช่วยย่อย',               'zh-CN':'消化药',            'zh-TW':'消化藥',            en:'Digestive Medicine' },
+        '지사제':            { ko:'지사제',            ja:'下痢止め',             vi:'Thuốc tiêu chảy',          th:'ยาแก้ท้องเสีย',            'zh-CN':'止泻药',            'zh-TW':'止瀉藥',            en:'Anti-diarrheal' },
+        '모기 기피제':        { ko:'모기 기피제',        ja:'虫除けスプレー',        vi:'Thuốc chống muỗi',         th:'สเปรย์กันยุง',             'zh-CN':'驱蚊剂',            'zh-TW':'防蚊液',            en:'Mosquito Repellent' },
+        '마스크':            { ko:'마스크',            ja:'マスク',               vi:'Khẩu trang',               th:'หน้ากากอนามัย',            'zh-CN':'口罩',             'zh-TW':'口罩',             en:'Mask' },
+        '여행용 캐리어/가방':  { ko:'여행용 캐리어/가방', ja:'スーツケース/バッグ',  vi:'Va li/Túi du lịch',        th:'กระเป๋าเดินทาง',           'zh-CN':'旅行箱/包',         'zh-TW':'旅行箱/包',         en:'Luggage/Bag' },
+        '압축 파우치':        { ko:'압축 파우치',        ja:'圧縮ポーチ',            vi:'Túi nén đồ',               th:'ถุงอัดสุญญากาศ',            'zh-CN':'压缩收纳袋',         'zh-TW':'壓縮收納袋',         en:'Compression Pouch' },
+        '자물쇠':            { ko:'자물쇠',            ja:'南京錠',               vi:'Ổ khóa',                   th:'กุญแจล็อก',               'zh-CN':'锁',               'zh-TW':'鎖',               en:'Padlock' },
+        '목 베개':           { ko:'목 베개',           ja:'ネックピロー',          vi:'Gối cổ',                   th:'หมอนรองคอ',               'zh-CN':'颈枕',             'zh-TW':'頸枕',             en:'Neck Pillow' },
+        '안대 & 귀마개':      { ko:'안대 & 귀마개',      ja:'アイマスク & 耳栓',    vi:'Mặt nạ ngủ & Nút tai',    th:'ที่ปิดตาและที่อุดหู',       'zh-CN':'眼罩 & 耳塞',       'zh-TW':'眼罩 & 耳塞',       en:'Eye Mask & Earplugs' },
+        '우산/우비':          { ko:'우산/우비',          ja:'傘/レインコート',       vi:'Ô/Áo mưa',                 th:'ร่ม/เสื้อกันฝน',           'zh-CN':'雨伞/雨衣',         'zh-TW':'雨傘/雨衣',         en:'Umbrella/Raincoat' }
+    };
+
+    const ALLERGY_VOCAB = {
+        shrimp:    {ko:'새우',    ja:'えび',       vi:'tôm',                 th:'กุ้ง',          'zh-TW':'蝦',       'zh-CN':'虾',  en:'shrimp'},
+        crab:      {ko:'게',      ja:'かに',        vi:'cua',                 th:'ปู',             'zh-TW':'蟹',       'zh-CN':'蟹',  en:'crab'},
+        shellfish: {ko:'조개/갑각류',ja:'貝類・甲殻類',vi:'động vật có vỏ',   th:'หอยและสัตว์เปลือกแข็ง','zh-TW':'貝類甲殼類','zh-CN':'贝类甲壳类',en:'shellfish'},
+        peanut:    {ko:'땅콩',    ja:'ピーナッツ',  vi:'đậu phộng',           th:'ถั่วลิสง',       'zh-TW':'花生',     'zh-CN':'花生',en:'peanut'},
+        egg:       {ko:'계란',    ja:'卵',          vi:'trứng',               th:'ไข่',            'zh-TW':'雞蛋',     'zh-CN':'鸡蛋',en:'egg'},
+        milk:      {ko:'우유',    ja:'牛乳',         vi:'sữa',                 th:'นม',             'zh-TW':'牛奶',     'zh-CN':'牛奶',en:'milk'},
+        wheat:     {ko:'밀',      ja:'小麦',         vi:'lúa mì',              th:'แป้งสาลี',       'zh-TW':'小麥',     'zh-CN':'小麦',en:'wheat'},
+        buckwheat: {ko:'메밀',    ja:'そば',         vi:'kiều mạch',           th:'บัควีท',         'zh-TW':'蕎麥',     'zh-CN':'荞麦',en:'buckwheat'}
+    };
+
+    const LANG_NAMES = {
+        ko:'한국어', ja:'日本語', vi:'Tiếng Việt', th:'ไทย', 'zh-CN':'简体中文', 'zh-TW':'繁體中文', en:'English'
+    };
+
+    const LANG_TO_CURRENCY = {
+        ko:'KRW', ja:'JPY', vi:'VND', th:'THB', 'zh-CN':'TWD', 'zh-TW':'TWD', en:'USD'
+    };
+
+    // ============================================================
+    // 3. 상태
+    // ============================================================
+    let userSelectedLang = localStorage.getItem('selectedLang') || 'ko';
+    let currentCountryId = new URLSearchParams(location.search).get('country') || 'osaka';
+    let currentDisplayRate = 1;
+    let sourceCurrency = 'JPY';
+    let targetCurrency = 'KRW';
+
+    // ============================================================
+    // 4. UI 텍스트 일괄 교체 (data-i18n)
+    // ============================================================
+    function applyI18n() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            el.textContent = t(el.dataset.i18n);
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            el.placeholder = t(el.dataset.i18nPlaceholder);
+        });
+        // btn_to_local은 도시 언어 기반
+        const cityLang = COUNTRIES_DATA[currentCountryId]?.lang || 'en';
+        const targetBtn = document.getElementById('targetLangBtn');
+        if (targetBtn) {
+            targetBtn.textContent = t('btn_to_local', {lang: LANG_NAMES[cityLang]});
+        }
+        // calcUnitMsg 업데이트
+        const calcUnitMsg = document.getElementById('calcUnitMsg');
+        if (calcUnitMsg) calcUnitMsg.textContent = t('calc_unit_msg', {curr: sourceCurrency, unit: formatNumber(getUnit(sourceCurrency, targetCurrency))});
+    }
+
+    // ============================================================
+    // 5. 언어 변경 (reload 없음, localStorage 저장)
+    // ============================================================
+    function changeLang(langCode) {
+        userSelectedLang = langCode;
+        localStorage.setItem('selectedLang', langCode);
+        updateCalcCurrencies();   // targetCurrency 먼저 세팅
+        updateRateDisplay();      // 그 다음 환율 API 호출
+        applyI18n();
+        updateTranslateButtons();
+        updateAllergyPhrase();
+        refreshWeatherDisplay();  // 날씨 설명을 현재 언어로 재표시
+        const _d = COUNTRIES_DATA[currentCountryId];
+        if (_d) { renderCityContent(_d); applyI18n(); }
+        renderChecklist();        // 체크리스트 카테고리명 재렌더링
+    }
+
+    // ============================================================
+    // 6. 여행지 변경
+    // ============================================================
+    function changeCity(cityId) {
+        currentCountryId = cityId;
+        const data = COUNTRIES_DATA[cityId];
+        if (!data) return;
+        sourceCurrency = data.currency;
+        renderCityContent(data);
+        updateRateDisplay();
+        updateCalcCurrencies();
+        applyI18n();
+        updateTranslateButtons();
+        updateAllergyPhrase();
+        fetchWeather(data.lat, data.lon, data.city);
+        // URL 업데이트 (reload 없음)
+        history.replaceState(null, '', '/?country=' + cityId);
+    }
+
+    // ============================================================
+    // 7. 도시 콘텐츠 렌더링
+    // ============================================================
+    // ============================================================
+    // 번역 캐시 + gtx 번역 헬퍼 (팁/경고 자동 번역)
+    // ============================================================
+    const _transCache = {};
+
+    async function gtxTranslate(text, tl) {
+        if (tl === 'ko') return text;
+        const key = tl + '|' + text;
+        if (_transCache[key]) return _transCache[key];
+        try {
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
+            const res = await fetch(url);
+            const json = await res.json();
+            const result = json?.[0]?.map(s => s?.[0] || '').join('') || text;
+            _transCache[key] = result;
+            return result;
+        } catch { return text; }
+    }
+
+    async function translateItems(items, tl) {
+        if (tl === 'ko') return items;
+        return Promise.all(items.map(item => gtxTranslate(item, tl)));
+    }
+
+    function renderCityContent(data) {
+        // 팁/주의 — 언어에 맞게 번역 후 표시
+        const tipsList = document.getElementById('tipsList');
+        const warningsList = document.getElementById('warningsList');
+        const tl = userSelectedLang;
+
+        // 일단 원문(한국어) 먼저 표시
+        if (tipsList) tipsList.innerHTML = data.tips.map(item => `<li>${item}</li>`).join('');
+        if (warningsList) warningsList.innerHTML = data.warnings.map(w => `<li>${w}</li>`).join('');
+
+        // 한국어가 아니면 번역 후 교체
+        if (tl !== 'ko') {
+            translateItems(data.tips, tl).then(translated => {
+                if (tipsList) tipsList.innerHTML = translated.map(item => `<li>${item}</li>`).join('');
+            });
+            translateItems(data.warnings, tl).then(translated => {
+                if (warningsList) warningsList.innerHTML = translated.map(w => `<li>${w}</li>`).join('');
+            });
+        }
+
+        // 앱
+        const appsList = document.getElementById('appsList');
+        if (appsList) {
+            const renderApps = (apps) => {
+                appsList.innerHTML = apps.map(app => `
+                <div class="app-item-compact">
+                    <div class="app-icon-small"><i class="fa-solid fa-mobile-screen"></i></div>
+                    <div class="app-info-small"><strong>${app.name}</strong><small>${app.desc}</small></div>
+                    <a href="${app.link}" target="_blank" rel="noopener noreferrer" class="app-btn-small">
+                        <i class="fa-solid fa-download"></i>
+                    </a>
+                </div>`).join('');
+            };
+            renderApps(data.apps);
+            const tl = userSelectedLang;
+            if (tl !== 'ko') {
+                Promise.all(data.apps.map(async app => ({
+                    ...app,
+                    desc: await gtxTranslate(app.desc, tl)
+                }))).then(renderApps);
+            }
+        }
+
+        // 쇼핑 — 번역 후 표시
+        const shoppingGrid = document.getElementById('shoppingGrid');
+        const renderShopping = (items) => {
+            if (shoppingGrid) {
+                shoppingGrid.innerHTML = items.map(item => `
+                    <a href="https://www.google.com/search?q=${encodeURIComponent(data.city + ' ' + item)}&tbm=isch"
+                       target="_blank" rel="noopener noreferrer" class="shop-item">
+                        <i class="fa-solid fa-magnifying-glass"></i><span>${item}</span>
+                    </a>`).join('');
+            }
         };
+        renderShopping(data.shopping);
+        if (tl !== 'ko') {
+            translateItems(data.shopping, tl).then(renderShopping);
+        }
 
-        const langToCurrency = {
-            'ko': 'KRW',
-            'ja': 'JPY',
-            'vi': 'VND',
-            'th': 'THB',
-            'zh-CN': 'TWD',
-            'zh-TW': 'TWD',
-            'en': 'USD'
+        // 회화 탭
+        renderPhrases(data.lang);
+    }
+
+    // 회화 데이터 (공통 key로 로드 - 기존 Jinja 렌더링 대체)
+    const PHRASES = {"japan": {"✈️": [{"ko": "관광 목적으로 왔습니다.", "ja": "観光目的で来ました。", "vi": "Tôi đến du lịch.", "th": "มาเพื่อท่องเที่ยวครับ/ค่ะ", "zh-CN": "我来旅游的。", "zh-TW": "我來旅遊的。", "en": "I'm here for sightseeing.", "local": "観光です (Kanko-desu)"}, {"ko": "출구가 어디인가요?", "ja": "出口はどこですか？", "vi": "Lối ra ở đâu?", "th": "ทางออกอยู่ที่ไหนครับ/ค่ะ?", "zh-CN": "出口在哪里？", "zh-TW": "出口在哪裡？", "en": "Where is the exit?", "local": "出口はどこですか？"}, {"ko": "제 짐이 나오지 않아요.", "ja": "荷物が出てきません。", "vi": "Hành lý của tôi không ra.", "th": "กระเป๋าของฉันยังไม่ออกมา", "zh-CN": "我的行李没出来。", "zh-TW": "我的行李沒出來。", "en": "My luggage hasn't come out.", "local": "荷物が出てきません"}, {"ko": "유심 카드는 어디서 사나요?", "ja": "SIMカードはどこで買えますか？", "vi": "Mua SIM card ở đâu?", "th": "ซื้อซิมการ์ดได้ที่ไหน?", "zh-CN": "SIM卡在哪里买？", "zh-TW": "SIM卡在哪裡買？", "en": "Where can I buy a SIM card?", "local": "SIMカードはどこで買えますか？"}], "🏨": [{"ko": "체크인 부탁합니다.", "ja": "チェックインお願いします。", "vi": "Nhờ làm thủ tục nhận phòng.", "th": "ขอเช็คอินครับ/ค่ะ", "zh-CN": "请帮我办理入住。", "zh-TW": "請幫我辦理入住。", "en": "Check-in, please.", "local": "チェックインお願いします"}, {"ko": "짐을 맡길 수 있을까요?", "ja": "荷物を預けられますか？", "vi": "Tôi có thể gửi hành lý không?", "th": "ฝากกระเป๋าได้ไหมครับ/ค่ะ?", "zh-CN": "可以寄存行李吗？", "zh-TW": "可以寄存行李嗎？", "en": "Can I store my luggage?", "local": "荷物を預けられますか？"}, {"ko": "와이파이 비번 알려주세요.", "ja": "Wi-Fiのパスワードは？", "vi": "Cho tôi biết mật khẩu Wi-Fi.", "th": "ช่วยบอกรหัส Wi-Fi ด้วยครับ/ค่ะ", "zh-CN": "请告诉我Wi-Fi密码。", "zh-TW": "請告訴我Wi-Fi密碼。", "en": "What's the Wi-Fi password?", "local": "Wi-Fiのパスワードは？"}, {"ko": "수건 더 주세요.", "ja": "タオルを追加してください。", "vi": "Cho thêm khăn tắm.", "th": "ขอผ้าเช็ดตัวเพิ่มครับ/ค่ะ", "zh-CN": "请再给我毛巾。", "zh-TW": "請再給我毛巾。", "en": "Extra towel, please.", "local": "タオルを追加してください"}, {"ko": "방이 추워요.", "ja": "部屋が寒いです。", "vi": "Phòng lạnh quá.", "th": "ห้องหนาวครับ/ค่ะ", "zh-CN": "房间很冷。", "zh-TW": "房間很冷。", "en": "The room is cold.", "local": "部屋が寒いです"}], "🍴": [{"ko": "두 명입니다.", "ja": "二人です。", "vi": "Hai người.", "th": "สองคนครับ/ค่ะ", "zh-CN": "两位。", "zh-TW": "兩位。", "en": "Table for two.", "local": "二人です (Futari-desu)"}, {"ko": "돼지고기는 빼주세요.", "ja": "豚肉抜きでお願いします。", "vi": "Không cho thịt heo.", "th": "ไม่ใส่หมูครับ/ค่ะ", "zh-CN": "请不要放猪肉。", "zh-TW": "請不要放豬肉。", "en": "No pork, please.", "local": "豚肉抜きでお願いします"}, {"ko": "계산서 주세요.", "ja": "お会計お願いします。", "vi": "Tính tiền nhé.", "th": "เช็คบิลด้วยครับ/ค่ะ", "zh-CN": "请结账。", "zh-TW": "請結帳。", "en": "Check, please.", "local": "お会計お願いします"}, {"ko": "추천 메뉴 있나요?", "ja": "おすすめはありますか？", "vi": "Có món nào ngon không?", "th": "มีเมนูแนะนำไหมครับ/ค่ะ?", "zh-CN": "有推荐的菜吗？", "zh-TW": "有推薦的菜嗎？", "en": "What do you recommend?", "local": "おすすめはありますか？"}, {"ko": "이거 매운가요?", "ja": "これは辛いですか？", "vi": "Món này có cay không?", "th": "อันนี้เผ็ดไหมครับ/ค่ะ?", "zh-CN": "这个辣吗？", "zh-TW": "這個辣嗎？", "en": "Is this spicy?", "local": "これは辛いですか？"}, {"ko": "물 좀 주세요.", "ja": "お水お願いします。", "vi": "Cho tôi nước.", "th": "ขอน้ำด้วยครับ/ค่ะ", "zh-CN": "请给我水。", "zh-TW": "請給我水。", "en": "Water, please.", "local": "お水お願いします"}], "🚌": [{"ko": "역이 어디인가요?", "ja": "駅はどこですか？", "vi": "Ga tàu ở đâu?", "th": "สถานีอยู่ที่ไหนครับ/ค่ะ?", "zh-CN": "车站在哪里？", "zh-TW": "車站在哪裡？", "en": "Where is the station?", "local": "駅はどこですか？"}, {"ko": "교통카드 충전하고 싶어요.", "ja": "チャージしたいです。", "vi": "Tôi muốn nạp tiền thẻ giao thông.", "th": "อยากเติมเงินบัตรโดยสารครับ/ค่ะ", "zh-CN": "我想充值交通卡。", "zh-TW": "我想充值交通卡。", "en": "I'd like to charge my transit card.", "local": "チャージしたいです"}, {"ko": "시내까지 부탁합니다.", "ja": "市内までお願いします。", "vi": "Đến trung tâm thành phố.", "th": "ไปใจกลางเมืองครับ/ค่ะ", "zh-CN": "请送我到市区。", "zh-TW": "請送我到市區。", "en": "To downtown, please.", "local": "市内までお願いします"}, {"ko": "몇 번 출구인가요?", "ja": "出口は何番ですか？", "vi": "Cửa ra số mấy?", "th": "ทางออกหมายเลขอะไรครับ/ค่ะ?", "zh-CN": "几号出口？", "zh-TW": "幾號出口？", "en": "Which exit number?", "local": "出口は何番ですか？"}, {"ko": "이 승강장이 맞나요?", "ja": "このホームで合っていますか？", "vi": "Sân ga này đúng không?", "th": "ชานชาลานี้ถูกไหมครับ/ค่ะ?", "zh-CN": "这个站台对吗？", "zh-TW": "這個月台對嗎？", "en": "Is this the right platform?", "local": "このホームで合っていますか？"}], "🛍️": [{"ko": "얼마예요?", "ja": "いくらですか？", "vi": "Bao nhiêu tiền?", "th": "เท่าไหร่ครับ/ค่ะ?", "zh-CN": "多少钱？", "zh-TW": "多少錢？", "en": "How much is it?", "local": "いくらですか？"}, {"ko": "면세 되나요?", "ja": "免税できますか？", "vi": "Được miễn thuế không?", "th": "ขอ tax free ได้ไหมครับ/ค่ะ?", "zh-CN": "可以免税吗？", "zh-TW": "可以免稅嗎？", "en": "Is tax-free available?", "local": "免税できますか？"}, {"ko": "입어봐도 될까요?", "ja": "試着してもいいですか？", "vi": "Thử được không?", "th": "ลองได้ไหมครับ/ค่ะ?", "zh-CN": "可以试穿吗？", "zh-TW": "可以試穿嗎？", "en": "Can I try it on?", "local": "試着してもいいですか？"}, {"ko": "새 제품 있나요?", "ja": "新しいのはありますか？", "vi": "Có hàng mới không?", "th": "มีสินค้าใหม่ไหมครับ/ค่ะ?", "zh-CN": "有新品吗？", "zh-TW": "有新品嗎？", "en": "Do you have new ones?", "local": "新しいのはありますか？"}, {"ko": "봉투 주세요.", "ja": "袋お願いします。", "vi": "Cho túi.", "th": "ขอถุงด้วยครับ/ค่ะ", "zh-CN": "请给我袋子。", "zh-TW": "請給我袋子。", "en": "A bag, please.", "local": "袋お願いします"}], "🚨": [{"ko": "도와주세요!", "ja": "助けてください！", "vi": "Cứu tôi với!", "th": "ช่วยด้วย!", "zh-CN": "救命！", "zh-TW": "救命！", "en": "Help!", "local": "助けてください！"}, {"ko": "지갑을 잃어버렸어요.", "ja": "財布をなくしました。", "vi": "Tôi bị mất ví.", "th": "ฉันทำกระเป๋าสตางค์หาย", "zh-CN": "我的钱包丢了。", "zh-TW": "我的錢包丟了。", "en": "I lost my wallet.", "local": "財布をなくしました"}, {"ko": "약국이 어디인가요?", "ja": "薬局はどこですか？", "vi": "Tiệm thuốc ở đâu?", "th": "ร้านขายยาอยู่ที่ไหนครับ/ค่ะ?", "zh-CN": "药店在哪里？", "zh-TW": "藥局在哪裡？", "en": "Where is the pharmacy?", "local": "薬局はどこですか？"}, {"ko": "병원에 가고 싶어요.", "ja": "病院へ行きたいです。", "vi": "Tôi muốn đến bệnh viện.", "th": "ฉันอยากไปโรงพยาบาล", "zh-CN": "我想去医院。", "zh-TW": "我想去醫院。", "en": "I want to go to the hospital.", "local": "病院へ行きたいです"}, {"ko": "경찰을 불러주세요.", "ja": "警察を呼んでください。", "vi": "Gọi cảnh sát.", "th": "ช่วยเรียกตำรวจด้วยครับ/ค่ะ", "zh-CN": "请叫警察。", "zh-TW": "請叫警察。", "en": "Please call the police.", "local": "警察を呼んでください"}]}, "vietnam": {"✈️": [{"ko": "여행하러 왔습니다.", "ja": "旅行に来ました。", "vi": "Tôi đến du lịch.", "th": "มาท่องเที่ยวครับ/ค่ะ", "zh-CN": "我来旅游的。", "zh-TW": "我來旅遊的。", "en": "I'm here for travel.", "local": "Đi du lịch"}, {"ko": "출구가 어디인가요?", "ja": "出口はどこですか？", "vi": "Lối ra ở đâu?", "th": "ทางออกอยู่ที่ไหน?", "zh-CN": "出口在哪里？", "zh-TW": "出口在哪裡？", "en": "Where is the exit?", "local": "Lối ra ở đâu?"}, {"ko": "그랩 타는 곳이 어디예요?", "ja": "Grabはどこで乗れますか？", "vi": "Chỗ đón Grab ở đâu?", "th": "ขึ้น Grab ที่ไหนครับ/ค่ะ?", "zh-CN": "在哪里坐Grab？", "zh-TW": "在哪裡坐Grab？", "en": "Where do I catch Grab?", "local": "Chỗ đón Grab ở đâu?"}, {"ko": "제 가방이 파손되었어요.", "ja": "荷物が壊れています。", "vi": "Hành lý của tôi bị hỏng.", "th": "กระเป๋าของฉันเสียหาย", "zh-CN": "我的行李损坏了。", "zh-TW": "我的行李損壞了。", "en": "My luggage is damaged.", "local": "Hành lý của tôi bị hỏng"}, {"ko": "환전소가 어디인가요?", "ja": "両替所はどこですか？", "vi": "Chỗ đổi tiền ở đâu?", "th": "ที่แลกเงินอยู่ที่ไหน?", "zh-CN": "换汇处在哪里？", "zh-TW": "換匯處在哪裡？", "en": "Where is the currency exchange?", "local": "Chỗ đổi tiền ở đâu?"}], "🏨": [{"ko": "체크인 부탁합니다.", "ja": "チェックインお願いします。", "vi": "Nhờ làm thủ tục nhận phòng.", "th": "ขอเช็คอินครับ/ค่ะ", "zh-CN": "请帮我办理入住。", "zh-TW": "請幫我辦理入住。", "en": "Check-in, please.", "local": "Làm ơn nhận phòng"}, {"ko": "방 청소 부탁합니다.", "ja": "部屋の清掃をお願いします。", "vi": "Nhờ dọn phòng.", "th": "ช่วยทำความสะอาดห้องด้วยครับ/ค่ะ", "zh-CN": "请打扫房间。", "zh-TW": "請打掃房間。", "en": "Please clean the room.", "local": "Làm ơn dọn phòng"}, {"ko": "물 좀 더 주세요.", "ja": "お水をもっとください。", "vi": "Cho thêm nước.", "th": "ขอน้ำเพิ่มครับ/ค่ะ", "zh-CN": "请再给我水。", "zh-TW": "請再給我水。", "en": "More water, please.", "local": "Cho tôi thêm nước"}, {"ko": "온수가 안 나와요.", "ja": "お湯が出ません。", "vi": "Không có nước nóng.", "th": "น้ำร้อนไม่ออกครับ/ค่ะ", "zh-CN": "没有热水。", "zh-TW": "沒有熱水。", "en": "No hot water.", "local": "Không có nước nóng"}, {"ko": "택시 불러주세요.", "ja": "タクシーを呼んでください。", "vi": "Gọi taxi cho tôi.", "th": "ช่วยเรียกแท็กซี่ด้วยครับ/ค่ะ", "zh-CN": "请帮我叫出租车。", "zh-TW": "請幫我叫計程車。", "en": "Please call a taxi.", "local": "Làm ơn gọi taxi"}], "🍴": [{"ko": "고수 빼주세요.", "ja": "パクチー抜きでお願いします。", "vi": "Không cho rau mùi.", "th": "ไม่ใส่ผักชีครับ/ค่ะ", "zh-CN": "不要香菜。", "zh-TW": "不要香菜。", "en": "No cilantro, please.", "local": "Không cho rau mùi"}, {"ko": "계산서 주세요.", "ja": "お会計お願いします。", "vi": "Tính tiền nhé.", "th": "เช็คบิลด้วยครับ/ค่ะ", "zh-CN": "请结账。", "zh-TW": "請結帳。", "en": "Check, please.", "local": "Tính tiền nhé"}, {"ko": "메뉴판 보여주세요.", "ja": "メニューを見せてください。", "vi": "Cho tôi xem thực đơn.", "th": "ขอดูเมนูด้วยครับ/ค่ะ", "zh-CN": "请给我菜单。", "zh-TW": "請給我菜單。", "en": "Show me the menu.", "local": "Cho tôi xem thực đơn"}, {"ko": "맥주 하나 더 주세요.", "ja": "ビールをもう一つください。", "vi": "Cho thêm một bia nữa.", "th": "ขอเบียร์อีกหนึ่งแก้วครับ/ค่ะ", "zh-CN": "再来一杯啤酒。", "zh-TW": "再來一杯啤酒。", "en": "One more beer, please.", "local": "Cho một bia nữa"}, {"ko": "안 맵게 해주세요.", "ja": "辛くしないでください。", "vi": "Không cay.", "th": "ไม่เผ็ดครับ/ค่ะ", "zh-CN": "不要辣。", "zh-TW": "不要辣。", "en": "Not spicy, please.", "local": "Không cay"}, {"ko": "얼음 좀 주세요.", "ja": "氷をください。", "vi": "Cho thêm đá.", "th": "ขอน้ำแข็งด้วยครับ/ค่ะ", "zh-CN": "请给我冰块。", "zh-TW": "請給我冰塊。", "en": "Ice, please.", "local": "Cho tôi thêm đá"}], "🚌": [{"ko": "미터기 켜주세요.", "ja": "メーターをつけてください。", "vi": "Bật đồng hồ tính tiền.", "th": "เปิดมิเตอร์ด้วยครับ/ค่ะ", "zh-CN": "请打表。", "zh-TW": "請打表。", "en": "Turn on the meter, please.", "local": "Làm ơn bật đồng hồ"}, {"ko": "이 주소로 가주세요.", "ja": "この住所まで行ってください。", "vi": "Đi đến địa chỉ này.", "th": "ไปที่อยู่นี้ครับ/ค่ะ", "zh-CN": "请去这个地址。", "zh-TW": "請去這個地址。", "en": "Go to this address.", "local": "Đi đến địa chỉ này"}, {"ko": "여기서 세워주세요.", "ja": "ここで止めてください。", "vi": "Dừng lại ở đây.", "th": "จอดที่นี่ครับ/ค่ะ", "zh-CN": "在这里停车。", "zh-TW": "在這裡停車。", "en": "Stop here, please.", "local": "Dừng lại ở đây"}, {"ko": "얼마인가요?", "ja": "いくらですか？", "vi": "Bao nhiêu tiền?", "th": "เท่าไหร่ครับ/ค่ะ?", "zh-CN": "多少钱？", "zh-TW": "多少錢？", "en": "How much?", "local": "Bao nhiêu tiền?"}, {"ko": "천천히 가주세요.", "ja": "ゆっくり走ってください。", "vi": "Đi chậm thôi.", "th": "ขับช้าๆ ด้วยครับ/ค่ะ", "zh-CN": "请开慢点。", "zh-TW": "請開慢點。", "en": "Drive slowly, please.", "local": "Làm ơn lái chậm"}], "🛍️": [{"ko": "이거 얼마예요?", "ja": "これはいくらですか？", "vi": "Cái này bao nhiêu?", "th": "อันนี้เท่าไหร่ครับ/ค่ะ?", "zh-CN": "这个多少钱？", "zh-TW": "這個多少錢？", "en": "How much is this?", "local": "Cái này bao nhiêu?"}, {"ko": "깎아주실 수 있나요?", "ja": "値引きできますか？", "vi": "Giảm giá được không?", "th": "ลดราคาได้ไหมครับ/ค่ะ?", "zh-CN": "可以便宜点吗？", "zh-TW": "可以便宜點嗎？", "en": "Can you give a discount?", "local": "Giảm giá được không?"}, {"ko": "이걸로 살게요.", "ja": "これにします。", "vi": "Tôi lấy cái này.", "th": "ขออันนี้ครับ/ค่ะ", "zh-CN": "我要买这个。", "zh-TW": "我要買這個。", "en": "I'll take this.", "local": "Tôi sẽ lấy cái này"}, {"ko": "너무 비싸요.", "ja": "高すぎます。", "vi": "Đắt quá.", "th": "แพงเกินไปครับ/ค่ะ", "zh-CN": "太贵了。", "zh-TW": "太貴了。", "en": "Too expensive.", "local": "Đắt quá"}, {"ko": "다른 색상 있나요?", "ja": "別の色はありますか？", "vi": "Có màu khác không?", "th": "มีสีอื่นไหมครับ/ค่ะ?", "zh-CN": "有其他颜色吗？", "zh-TW": "有其他顏色嗎？", "en": "Do you have other colors?", "local": "Có màu khác không?"}], "🚨": [{"ko": "도와주세요!", "ja": "助けてください！", "vi": "Cứu với!", "th": "ช่วยด้วย!", "zh-CN": "救命！", "zh-TW": "救命！", "en": "Help!", "local": "Cứu với!"}, {"ko": "병원 어디예요?", "ja": "病院はどこですか？", "vi": "Bệnh viện ở đâu?", "th": "โรงพยาบาลอยู่ที่ไหน?", "zh-CN": "医院在哪里？", "zh-TW": "醫院在哪裡？", "en": "Where is the hospital?", "local": "Bệnh viện ở đâu?"}, {"ko": "폰을 잃어버렸어요.", "ja": "スマホをなくしました。", "vi": "Tôi bị mất điện thoại.", "th": "ฉันทำมือถือหาย", "zh-CN": "我的手机丢了。", "zh-TW": "我的手機丟了。", "en": "I lost my phone.", "local": "Tôi bị mất điện thoại"}, {"ko": "약국이 어디예요?", "ja": "薬局はどこですか？", "vi": "Tiệm thuốc ở đâu?", "th": "ร้านขายยาอยู่ที่ไหน?", "zh-CN": "药店在哪里？", "zh-TW": "藥局在哪裡？", "en": "Where is the pharmacy?", "local": "Tiệm thuốc ở đâu?"}, {"ko": "의사를 불러주세요.", "ja": "医者を呼んでください。", "vi": "Gọi bác sĩ.", "th": "ช่วยเรียกหมอด้วยครับ/ค่ะ", "zh-CN": "请叫医生。", "zh-TW": "請叫醫生。", "en": "Please call a doctor.", "local": "Gọi bác sĩ"}]}, "thailand": {"✈️": [{"ko": "관광하러 왔습니다.", "ja": "観光に来ました。", "vi": "Tôi đến du lịch.", "th": "มาท่องเที่ยวครับ/ค่ะ", "zh-CN": "我来旅游的。", "zh-TW": "我來旅遊的。", "en": "I'm here for sightseeing.", "local": "Ma tiao krub/ka"}, {"ko": "호텔에 머뭅니다.", "ja": "ホテルに泊まります。", "vi": "Tôi ở khách sạn.", "th": "พักที่โรงแรมครับ/ค่ะ", "zh-CN": "我住酒店。", "zh-TW": "我住飯店。", "en": "I'm staying at a hotel.", "local": "Puk tee rong-ram"}, {"ko": "택시 승강장이 어디예요?", "ja": "タクシー乗り場はどこですか？", "vi": "Bến taxi ở đâu?", "th": "ที่จอดแท็กซี่อยู่ที่ไหนครับ/ค่ะ?", "zh-CN": "出租车站在哪里？", "zh-TW": "計程車站在哪裡？", "en": "Where is the taxi stand?", "local": "Taxi yoo tee nai?"}, {"ko": "택스 리펀 되나요?", "ja": "VAT還付はできますか？", "vi": "Hoàn thuế VAT được không?", "th": "คืนภาษี VAT ได้ไหมครับ/ค่ะ?", "zh-CN": "可以退税吗？", "zh-TW": "可以退稅嗎？", "en": "Is VAT refund available?", "local": "VAT Refund dai mai?"}, {"ko": "심카드가 필요해요.", "ja": "SIMカードが必要です。", "vi": "Tôi cần SIM card.", "th": "ต้องการซิมการ์ดครับ/ค่ะ", "zh-CN": "我需要SIM卡。", "zh-TW": "我需要SIM卡。", "en": "I need a SIM card.", "local": "Kor SIM card krub/ka"}], "🏨": [{"ko": "체크인 할게요.", "ja": "チェックインします。", "vi": "Tôi check-in.", "th": "เช็คอินครับ/ค่ะ", "zh-CN": "我要办理入住。", "zh-TW": "我要辦理入住。", "en": "Check-in, please.", "local": "Chek-in krub/ka"}, {"ko": "조식 몇 시예요?", "ja": "朝食は何時ですか？", "vi": "Bữa sáng mấy giờ?", "th": "อาหารเช้าเริ่มกี่โมงครับ/ค่ะ?", "zh-CN": "早餐几点？", "zh-TW": "早餐幾點？", "en": "What time is breakfast?", "local": "A-han chao kee mong?"}, {"ko": "체크아웃 연장 되나요?", "ja": "レイトチェックアウトできますか？", "vi": "Có thể trả phòng muộn không?", "th": "เช็คเอ้าท์ช้าได้ไหมครับ/ค่ะ?", "zh-CN": "可以延迟退房吗？", "zh-TW": "可以延遲退房嗎？", "en": "Can I have a late check-out?", "local": "Late check-out dai mai?"}, {"ko": "수건 더 필요해요.", "ja": "タオルがもっと必要です。", "vi": "Tôi cần thêm khăn.", "th": "ต้องการผ้าเช็ดตัวเพิ่มครับ/ค่ะ", "zh-CN": "我需要更多毛巾。", "zh-TW": "我需要更多毛巾。", "en": "I need more towels.", "local": "Kor pa-ched-tua perm"}, {"ko": "택시 불러주세요.", "ja": "タクシーを呼んでください。", "vi": "Gọi taxi cho tôi.", "th": "ช่วยเรียกแท็กซี่ด้วยครับ/ค่ะ", "zh-CN": "请帮我叫出租车。", "zh-TW": "請幫我叫計程車。", "en": "Please call a taxi.", "local": "Riak taxi krub/ka"}], "🍴": [{"ko": "안 맵게 해주세요.", "ja": "辛くしないでください。", "vi": "Không cay.", "th": "ไม่เผ็ดครับ/ค่ะ", "zh-CN": "不要辣。", "zh-TW": "不要辣。", "en": "Not spicy, please.", "local": "Mai phed krub/ka"}, {"ko": "계산서 주세요.", "ja": "お会計お願いします。", "vi": "Tính tiền nhé.", "th": "เช็คบิลด้วยครับ/ค่ะ", "zh-CN": "请结账。", "zh-TW": "請結帳。", "en": "Check, please.", "local": "Gep tang duay"}, {"ko": "고수 넣지 마세요.", "ja": "パクチーを入れないでください。", "vi": "Không cho rau mùi.", "th": "ไม่ใส่ผักชีครับ/ค่ะ", "zh-CN": "不要放香菜。", "zh-TW": "不要放香菜。", "en": "No cilantro, please.", "local": "Mai sai pak-chee"}, {"ko": "물 좀 주세요.", "ja": "お水をください。", "vi": "Cho tôi nước.", "th": "ขอน้ำด้วยครับ/ค่ะ", "zh-CN": "请给我水。", "zh-TW": "請給我水。", "en": "Water, please.", "local": "Kor nam plao"}, {"ko": "추천 메뉴 뭐예요?", "ja": "おすすめは何ですか？", "vi": "Món nào ngon?", "th": "มีอะไรอร่อยไหมครับ/ค่ะ?", "zh-CN": "有什么好吃的？", "zh-TW": "有什麼好吃的？", "en": "What's good here?", "local": "Mee arai a-roy?"}, {"ko": "얼음 좀 주세요.", "ja": "氷をください。", "vi": "Cho đá.", "th": "ขอน้ำแข็งครับ/ค่ะ", "zh-CN": "请给我冰块。", "zh-TW": "請給我冰塊。", "en": "Ice, please.", "local": "Kor nam-keng"}], "🚌": [{"ko": "...에 가주세요.", "ja": "...まで行ってください。", "vi": "Đi đến...", "th": "ไปที่...ครับ/ค่ะ", "zh-CN": "请去...", "zh-TW": "請去...", "en": "Go to..., please.", "local": "Pai tee..."}, {"ko": "얼마예요?", "ja": "いくらですか？", "vi": "Bao nhiêu tiền?", "th": "เท่าไหร่ครับ/ค่ะ?", "zh-CN": "多少钱？", "zh-TW": "多少錢？", "en": "How much?", "local": "Tao rai krub/ka?"}, {"ko": "미터기 켜주세요.", "ja": "メーターをつけてください。", "vi": "Bật đồng hồ.", "th": "เปิดมิเตอร์ด้วยครับ/ค่ะ", "zh-CN": "请打表。", "zh-TW": "請打表。", "en": "Turn on the meter.", "local": "Poed meter duay"}, {"ko": "좌회전 / 우회전", "ja": "左折／右折", "vi": "Rẽ trái / Rẽ phải", "th": "เลี้ยวซ้าย / เลี้ยวขวา", "zh-CN": "左转 / 右转", "zh-TW": "左轉 / 右轉", "en": "Turn left / Turn right", "local": "Liao sai / Liao kwa"}, {"ko": "여기서 내려주세요.", "ja": "ここで降ろしてください。", "vi": "Cho xuống đây.", "th": "จอดที่นี่ครับ/ค่ะ", "zh-CN": "在这里下车。", "zh-TW": "在這裡下車。", "en": "Stop here, please.", "local": "Jod tee nee"}], "🛍️": [{"ko": "깎아주실 수 있나요?", "ja": "値引きできますか？", "vi": "Giảm giá được không?", "th": "ลดราคาได้ไหมครับ/ค่ะ?", "zh-CN": "可以便宜点吗？", "zh-TW": "可以便宜點嗎？", "en": "Can you give a discount?", "local": "Lot noi dai mai?"}, {"ko": "너무 비싸요!", "ja": "高すぎます！", "vi": "Đắt quá!", "th": "แพงมากครับ/ค่ะ!", "zh-CN": "太贵了！", "zh-TW": "太貴了！", "en": "Too expensive!", "local": "Paeng mak!"}, {"ko": "이거 살게요.", "ja": "これにします。", "vi": "Tôi lấy cái này.", "th": "ขออันนี้ครับ/ค่ะ", "zh-CN": "我要这个。", "zh-TW": "我要這個。", "en": "I'll take this.", "local": "Ao an nee"}, {"ko": "입어봐도 되나요?", "ja": "試着してもいいですか？", "vi": "Thử được không?", "th": "ลองได้ไหมครับ/ค่ะ?", "zh-CN": "可以试穿吗？", "zh-TW": "可以試穿嗎？", "en": "Can I try it on?", "local": "Long dai mai?"}, {"ko": "다른 색깔 있나요?", "ja": "他の色はありますか？", "vi": "Có màu khác không?", "th": "มีสีอื่นไหมครับ/ค่ะ?", "zh-CN": "有其他颜色吗？", "zh-TW": "有其他顏色嗎？", "en": "Other colors available?", "local": "Mee si eun mai?"}], "🚨": [{"ko": "도와주세요!", "ja": "助けてください！", "vi": "Cứu với!", "th": "ช่วยด้วย!", "zh-CN": "救命！", "zh-TW": "救命！", "en": "Help!", "local": "Chuay duay!"}, {"ko": "약국이 어디예요?", "ja": "薬局はどこですか？", "vi": "Tiệm thuốc ở đâu?", "th": "ร้านขายยาอยู่ที่ไหน?", "zh-CN": "药店在哪里？", "zh-TW": "藥局在哪裡？", "en": "Where is the pharmacy?", "local": "Ran-kai-ya yoo nai?"}, {"ko": "병원에 가야 해요.", "ja": "病院に行かなければなりません。", "vi": "Tôi cần đến bệnh viện.", "th": "ต้องไปโรงพยาบาลครับ/ค่ะ", "zh-CN": "我需要去医院。", "zh-TW": "我需要去醫院。", "en": "I need to go to hospital.", "local": "Rong-pa-ya-ban"}, {"ko": "몸이 아파요.", "ja": "体調が悪いです。", "vi": "Tôi không khỏe.", "th": "ฉันไม่สบายครับ/ค่ะ", "zh-CN": "我身体不舒服。", "zh-TW": "我身體不舒服。", "en": "I'm not feeling well.", "local": "Chun mai sabai"}, {"ko": "여권을 잃어버렸어요.", "ja": "パスポートをなくしました。", "vi": "Tôi mất hộ chiếu.", "th": "ฉันทำหนังสือเดินทางหาย", "zh-CN": "我的护照丢了。", "zh-TW": "我的護照丟了。", "en": "I lost my passport.", "local": "Passport hai"}]}, "taiwan": {"✈️": [{"ko": "여행하러 왔습니다.", "ja": "旅行に来ました。", "vi": "Tôi đến du lịch.", "th": "มาท่องเที่ยวครับ/ค่ะ", "zh-CN": "我来旅游的。", "zh-TW": "我來旅遊的。", "en": "I'm here for travel.", "local": "旅遊 (Lǚyóu)"}, {"ko": "지하철역이 어디인가요?", "ja": "地下鉄の駅はどこですか？", "vi": "Ga tàu điện ngầm ở đâu?", "th": "สถานีรถไฟใต้ดินอยู่ที่ไหน?", "zh-CN": "地铁站在哪里？", "zh-TW": "捷運站在哪裡？", "en": "Where is the subway station?", "local": "捷運站在哪裡?"}, {"ko": "유심 카드 어디서 사나요?", "ja": "SIMカードはどこで買えますか？", "vi": "Mua SIM card ở đâu?", "th": "ซื้อซิมการ์ดได้ที่ไหน?", "zh-CN": "哪里买SIM卡？", "zh-TW": "哪裡買SIM卡？", "en": "Where can I buy a SIM card?", "local": "SIM卡在哪裡買?"}, {"ko": "짐 찾는 곳이 어디죠?", "ja": "荷物受取場所はどこですか？", "vi": "Khu nhận hành lý ở đâu?", "th": "ที่รับกระเป๋าอยู่ที่ไหน?", "zh-CN": "行李提取处在哪里？", "zh-TW": "行李提取處在哪裡？", "en": "Where is the baggage claim?", "local": "行李領取處?"}], "🏨": [{"ko": "체크인 부탁합니다.", "ja": "チェックインお願いします。", "vi": "Nhờ làm thủ tục nhận phòng.", "th": "ขอเช็คอินครับ/ค่ะ", "zh-CN": "请帮我办理入住。", "zh-TW": "請幫我辦理入住。", "en": "Check-in, please.", "local": "辦理入住 (Bànlǐ rùzhù)"}, {"ko": "짐을 맡길 수 있나요?", "ja": "荷物を預けられますか？", "vi": "Tôi có thể gửi hành lý không?", "th": "ฝากกระเป๋าได้ไหมครับ/ค่ะ?", "zh-CN": "可以寄存行李吗？", "zh-TW": "可以寄存行李嗎？", "en": "Can I store my luggage?", "local": "寄存行李?"}, {"ko": "와이파이 비번이 뭐죠?", "ja": "Wi-Fiのパスワードは？", "vi": "Mật khẩu Wi-Fi là gì?", "th": "รหัส Wi-Fi คืออะไรครับ/ค่ะ?", "zh-CN": "Wi-Fi密码是什么？", "zh-TW": "Wi-Fi密碼是什麼？", "en": "What's the Wi-Fi password?", "local": "WiFi 密碼?"}, {"ko": "수건이 필요합니다.", "ja": "タオルが必要です。", "vi": "Tôi cần khăn.", "th": "ต้องการผ้าเช็ดตัวครับ/ค่ะ", "zh-CN": "我需要毛巾。", "zh-TW": "我需要毛巾。", "en": "I need a towel.", "local": "我需要毛巾"}, {"ko": "체크아웃 할게요.", "ja": "チェックアウトします。", "vi": "Tôi check-out.", "th": "เช็คเอ้าท์ครับ/ค่ะ", "zh-CN": "我要退房。", "zh-TW": "我要退房。", "en": "Check-out, please.", "local": "退房 (Tuìfáng)"}], "🍴": [{"ko": "두 명입니다.", "ja": "二人です。", "vi": "Hai người.", "th": "สองคนครับ/ค่ะ", "zh-CN": "两位。", "zh-TW": "兩位。", "en": "Table for two.", "local": "兩位 (Liǎng wèi)"}, {"ko": "계산할게요.", "ja": "お会計お願いします。", "vi": "Tính tiền.", "th": "เช็คบิลครับ/ค่ะ", "zh-CN": "结账。", "zh-TW": "結帳。", "en": "Check, please.", "local": "買單 (Mǎidān)"}, {"ko": "고수 빼주세요.", "ja": "パクチー抜きでお願いします。", "vi": "Không cho rau mùi.", "th": "ไม่ใส่ผักชีครับ/ค่ะ", "zh-CN": "不要香菜。", "zh-TW": "不要香菜。", "en": "No cilantro, please.", "local": "不要香菜 (Bùyào xiāngcài)"}, {"ko": "포장할게요.", "ja": "持ち帰りにします。", "vi": "Gói mang về.", "th": "ห่อกลับบ้านครับ/ค่ะ", "zh-CN": "打包带走。", "zh-TW": "打包帶走。", "en": "To go, please.", "local": "外帶 (Wàidài)"}, {"ko": "추천 메뉴 있나요?", "ja": "おすすめはありますか？", "vi": "Có món nào ngon không?", "th": "มีเมนูแนะนำไหมครับ/ค่ะ?", "zh-CN": "有推荐的菜吗？", "zh-TW": "有推薦的菜嗎？", "en": "Any recommendations?", "local": "推薦什麼?"}], "🚌": [{"ko": "버스 정류장 어디예요?", "ja": "バス停はどこですか？", "vi": "Trạm xe buýt ở đâu?", "th": "ป้ายรถเมล์อยู่ที่ไหน?", "zh-CN": "公交车站在哪里？", "zh-TW": "公車站在哪？", "en": "Where is the bus stop?", "local": "公車站在哪?"}, {"ko": "이곳으로 가주세요.", "ja": "ここへ行ってください。", "vi": "Đi đến đây.", "th": "ไปที่นี่ครับ/ค่ะ", "zh-CN": "请去这里。", "zh-TW": "請去這裡。", "en": "Go here, please.", "local": "去這裡 (Qù zhèlǐ)"}, {"ko": "여기 세워주세요.", "ja": "ここで止めてください。", "vi": "Dừng ở đây.", "th": "จอดที่นี่ครับ/ค่ะ", "zh-CN": "在这里停。", "zh-TW": "在這裡停。", "en": "Stop here, please.", "local": "這裡停車"}, {"ko": "이지카드 충전해 주세요.", "ja": "悠遊カードをチャージしてください。", "vi": "Nạp tiền thẻ EasyCard.", "th": "เติมเงินบัตร EasyCard ครับ/ค่ะ", "zh-CN": "给悠游卡充值。", "zh-TW": "悠遊卡加值。", "en": "Charge my EasyCard.", "local": "悠遊卡加值"}, {"ko": "출구가 몇 번이죠?", "ja": "出口は何番ですか？", "vi": "Cửa ra số mấy?", "th": "ทางออกหมายเลขเท่าไหร่?", "zh-CN": "几号出口？", "zh-TW": "出口是幾號？", "en": "Which exit number?", "local": "出口是幾號?"}], "🛍️": [{"ko": "얼마인가요?", "ja": "いくらですか？", "vi": "Bao nhiêu tiền?", "th": "เท่าไหร่ครับ/ค่ะ?", "zh-CN": "多少钱？", "zh-TW": "多少錢？", "en": "How much is it?", "local": "多少錢? (Duōshǎo qián?)"}, {"ko": "할인 되나요?", "ja": "割引できますか？", "vi": "Có giảm giá không?", "th": "มีส่วนลดไหมครับ/ค่ะ?", "zh-CN": "可以打折吗？", "zh-TW": "可以打折嗎？", "en": "Is there a discount?", "local": "打折嗎?"}, {"ko": "영수증 주세요.", "ja": "レシートをください。", "vi": "Cho tôi hóa đơn.", "th": "ขอใบเสร็จด้วยครับ/ค่ะ", "zh-CN": "请给我收据。", "zh-TW": "請給我發票。", "en": "Receipt, please.", "local": "我要發票"}, {"ko": "너무 비싸요.", "ja": "高すぎます。", "vi": "Đắt quá.", "th": "แพงเกินไปครับ/ค่ะ", "zh-CN": "太贵了。", "zh-TW": "太貴了。", "en": "Too expensive.", "local": "太貴了 (Tài guìle)"}, {"ko": "입어봐도 되나요?", "ja": "試着してもいいですか？", "vi": "Thử được không?", "th": "ลองได้ไหมครับ/ค่ะ?", "zh-CN": "可以试穿吗？", "zh-TW": "可以試穿嗎？", "en": "Can I try it on?", "local": "可以試試嗎?"}], "🚨": [{"ko": "도와주세요!", "ja": "助けてください！", "vi": "Cứu với!", "th": "ช่วยด้วย!", "zh-CN": "救命！", "zh-TW": "救命！", "en": "Help!", "local": "救命! (Jiùmìng!)"}, {"ko": "병원이 어디인가요?", "ja": "病院はどこですか？", "vi": "Bệnh viện ở đâu?", "th": "โรงพยาบาลอยู่ที่ไหน?", "zh-CN": "医院在哪里？", "zh-TW": "醫院在哪？", "en": "Where is the hospital?", "local": "醫院在哪?"}, {"ko": "여권을 잃어버렸어요.", "ja": "パスポートをなくしました。", "vi": "Tôi mất hộ chiếu.", "th": "ฉันทำหนังสือเดินทางหาย", "zh-CN": "我的护照丢了。", "zh-TW": "護照丟了。", "en": "I lost my passport.", "local": "護照丟了"}, {"ko": "약국이 어디인가요?", "ja": "薬局はどこですか？", "vi": "Tiệm thuốc ở đâu?", "th": "ร้านขายยาอยู่ที่ไหน?", "zh-CN": "药店在哪里？", "zh-TW": "藥局在哪裡？", "en": "Where is the pharmacy?", "local": "藥局 (Yàojú)"}, {"ko": "좀 도와주세요.", "ja": "助けてください。", "vi": "Làm ơn giúp tôi.", "th": "ช่วยฉันด้วยครับ/ค่ะ", "zh-CN": "请帮帮我。", "zh-TW": "請幫幫我。", "en": "Please help me.", "local": "請幫幫我"}]}, "hongkong": {"✈️": [{"ko": "여행하러 왔습니다.", "ja": "旅行に来ました。", "vi": "Tôi đến du lịch.", "th": "มาท่องเที่ยวครับ/ค่ะ", "zh-CN": "我来旅游的。", "zh-TW": "我來旅遊。", "en": "I'm here for travel.", "local": "我嚟旅遊。"}, {"ko": "출구가 어디인가요?", "ja": "出口はどこですか？", "vi": "Lối ra ở đâu?", "th": "ทางออกอยู่ที่ไหน?", "zh-CN": "出口在哪里？", "zh-TW": "出口在哪裡？", "en": "Where is the exit?", "local": "出口喺邊？"}, {"ko": "제 짐이 안 보여요.", "ja": "荷物が見当たりません。", "vi": "Hành lý của tôi không thấy.", "th": "กระเป๋าของฉันหายไป", "zh-CN": "我的行李不见了。", "zh-TW": "我的行李不見了。", "en": "I can't find my luggage.", "local": "我件行李唔見咗。"}, {"ko": "유심은 어디서 사나요?", "ja": "SIMカードはどこで買えますか？", "vi": "Mua SIM ở đâu?", "th": "ซื้อซิมได้ที่ไหน?", "zh-CN": "在哪里买SIM卡？", "zh-TW": "在哪裡買SIM卡？", "en": "Where can I buy a SIM?", "local": "邊度可以買SIM卡？"}], "🏨": [{"ko": "체크인 부탁합니다.", "ja": "チェックインお願いします。", "vi": "Nhờ làm thủ tục nhận phòng.", "th": "ขอเช็คอินครับ/ค่ะ", "zh-CN": "请帮我办理入住。", "zh-TW": "請幫我辦理入住。", "en": "Check-in, please.", "local": "麻煩幫我辦理入住。"}, {"ko": "짐을 맡길 수 있을까요?", "ja": "荷物を預けられますか？", "vi": "Tôi có thể gửi hành lý không?", "th": "ฝากกระเป๋าได้ไหมครับ/ค่ะ?", "zh-CN": "可以寄存行李吗？", "zh-TW": "可以寄存行李嗎？", "en": "Can I store my luggage?", "local": "可唔可以寄存行李？"}, {"ko": "와이파이 비번이 뭐예요?", "ja": "Wi-Fiのパスワードは？", "vi": "Mật khẩu Wi-Fi?", "th": "รหัส Wi-Fi คืออะไรครับ/ค่ะ?", "zh-CN": "Wi-Fi密码是什么？", "zh-TW": "Wi-Fi密碼是什麼？", "en": "What's the Wi-Fi password?", "local": "Wi-Fi密碼係咩？"}, {"ko": "수건 더 주세요.", "ja": "タオルをもっとください。", "vi": "Cho thêm khăn.", "th": "ขอผ้าเช็ดตัวเพิ่มครับ/ค่ะ", "zh-CN": "再给我毛巾。", "zh-TW": "再給我毛巾。", "en": "More towels, please.", "local": "唔該俾多兩條毛巾。"}, {"ko": "방이 너무 추워요.", "ja": "部屋が寒すぎます。", "vi": "Phòng quá lạnh.", "th": "ห้องหนาวมากครับ/ค่ะ", "zh-CN": "房间太冷了。", "zh-TW": "房間太冷了。", "en": "The room is too cold.", "local": "間房太凍。"}], "🍴": [{"ko": "두 명입니다.", "ja": "二人です。", "vi": "Hai người.", "th": "สองคนครับ/ค่ะ", "zh-CN": "两位。", "zh-TW": "兩位。", "en": "Table for two.", "local": "兩位，唔該。"}, {"ko": "계산서 주세요.", "ja": "お会計お願いします。", "vi": "Tính tiền.", "th": "เช็คบิลครับ/ค่ะ", "zh-CN": "结账。", "zh-TW": "結帳。", "en": "Check, please.", "local": "埋單，唔該。"}, {"ko": "고수는 빼주세요.", "ja": "パクチー抜きでお願いします。", "vi": "Không cho rau mùi.", "th": "ไม่ใส่ผักชีครับ/ค่ะ", "zh-CN": "不要香菜。", "zh-TW": "不要香菜。", "en": "No cilantro, please.", "local": "唔該唔好落芫茜。"}, {"ko": "추천 메뉴 있나요?", "ja": "おすすめはありますか？", "vi": "Có món ngon không?", "th": "มีเมนูแนะนำไหมครับ/ค่ะ?", "zh-CN": "有推荐的菜吗？", "zh-TW": "有推薦的菜嗎？", "en": "Any recommendations?", "local": "有冇推薦菜式？"}, {"ko": "물 좀 주세요.", "ja": "お水をください。", "vi": "Cho tôi nước.", "th": "ขอน้ำด้วยครับ/ค่ะ", "zh-CN": "请给我水。", "zh-TW": "請給我水。", "en": "Water, please.", "local": "唔該俾杯水。"}], "🚌": [{"ko": "지하철역이 어디예요?", "ja": "地下鉄の駅はどこですか？", "vi": "Ga MTR ở đâu?", "th": "สถานี MTR อยู่ที่ไหน?", "zh-CN": "地铁站在哪里？", "zh-TW": "港鐵站在哪裡？", "en": "Where is the MTR station?", "local": "港鐵站喺邊？"}, {"ko": "이 주소로 가주세요.", "ja": "この住所まで行ってください。", "vi": "Đi đến địa chỉ này.", "th": "ไปที่อยู่นี้ครับ/ค่ะ", "zh-CN": "请去这个地址。", "zh-TW": "請去這個地址。", "en": "Go to this address.", "local": "麻煩去呢個地址。"}, {"ko": "여기서 세워주세요.", "ja": "ここで止めてください。", "vi": "Dừng ở đây.", "th": "จอดที่นี่ครับ/ค่ะ", "zh-CN": "在这里停。", "zh-TW": "在這裡停。", "en": "Stop here, please.", "local": "唔該喺呢度停。"}, {"ko": "옥토퍼스로 결제되나요?", "ja": "オクトパスカードで支払えますか？", "vi": "Thanh toán bằng thẻ Octopus được không?", "th": "จ่ายด้วยบัตร Octopus ได้ไหม?", "zh-CN": "可以用八达通吗？", "zh-TW": "可以用八達通嗎？", "en": "Can I pay with Octopus?", "local": "可以用八達通嗎？"}, {"ko": "요금이 얼마예요?", "ja": "料金はいくらですか？", "vi": "Giá vé bao nhiêu?", "th": "ค่าโดยสารเท่าไหร่?", "zh-CN": "票价多少？", "zh-TW": "車費多少？", "en": "How much is the fare?", "local": "車費幾多？"}], "🛍️": [{"ko": "이거 얼마예요?", "ja": "これはいくらですか？", "vi": "Cái này bao nhiêu?", "th": "อันนี้เท่าไหร่ครับ/ค่ะ?", "zh-CN": "这个多少钱？", "zh-TW": "這個多少錢？", "en": "How much is this?", "local": "呢個幾錢？"}, {"ko": "택스 리펀 되나요?", "ja": "タックスリファンドできますか？", "vi": "Hoàn thuế được không?", "th": "คืนภาษีได้ไหมครับ/ค่ะ?", "zh-CN": "可以退税吗？", "zh-TW": "可以退稅嗎？", "en": "Tax refund available?", "local": "可以退稅嗎？"}, {"ko": "입어봐도 될까요?", "ja": "試着してもいいですか？", "vi": "Thử được không?", "th": "ลองได้ไหมครับ/ค่ะ?", "zh-CN": "可以试穿吗？", "zh-TW": "可以試穿嗎？", "en": "Can I try it on?", "local": "可以試穿嗎？"}, {"ko": "새 상품 있나요?", "ja": "新しい商品はありますか？", "vi": "Có hàng mới không?", "th": "มีสินค้าใหม่ไหมครับ/ค่ะ?", "zh-CN": "有新品吗？", "zh-TW": "有新品嗎？", "en": "Do you have new items?", "local": "有冇新嘅？"}, {"ko": "봉투 주세요.", "ja": "袋をください。", "vi": "Cho túi.", "th": "ขอถุงด้วยครับ/ค่ะ", "zh-CN": "请给我袋子。", "zh-TW": "請給我袋子。", "en": "A bag, please.", "local": "唔該俾個袋。"}], "🚨": [{"ko": "도와주세요!", "ja": "助けてください！", "vi": "Cứu với!", "th": "ช่วยด้วย!", "zh-CN": "救命！", "zh-TW": "救命！", "en": "Help!", "local": "救命！"}, {"ko": "지갑을 잃어버렸어요.", "ja": "財布をなくしました。", "vi": "Tôi mất ví.", "th": "ฉันทำกระเป๋าสตางค์หาย", "zh-CN": "我的钱包丢了。", "zh-TW": "我的錢包丟了。", "en": "I lost my wallet.", "local": "我唔見咗銀包。"}, {"ko": "약국이 어디예요?", "ja": "薬局はどこですか？", "vi": "Tiệm thuốc ở đâu?", "th": "ร้านขายยาอยู่ที่ไหน?", "zh-CN": "药店在哪里？", "zh-TW": "藥局在哪裡？", "en": "Where is the pharmacy?", "local": "藥房喺邊？"}, {"ko": "병원에 가야 해요.", "ja": "病院に行く必要があります。", "vi": "Tôi cần đi bệnh viện.", "th": "ต้องไปโรงพยาบาลครับ/ค่ะ", "zh-CN": "我需要去医院。", "zh-TW": "我需要去醫院。", "en": "I need to go to hospital.", "local": "我要去醫院。"}, {"ko": "경찰을 불러주세요.", "ja": "警察を呼んでください。", "vi": "Gọi cảnh sát.", "th": "ช่วยเรียกตำรวจด้วยครับ/ค่ะ", "zh-CN": "请报警。", "zh-TW": "請報警。", "en": "Please call the police.", "local": "唔該幫我報警。"}]}, "usa": {"✈️": [{"ko": "관광하러 왔습니다.", "ja": "観光に来ました。", "vi": "Tôi đến tham quan.", "th": "มาท่องเที่ยวครับ/ค่ะ", "zh-CN": "我来观光的。", "zh-TW": "我來觀光的。", "en": "I'm here for sightseeing.", "local": "Sightseeing"}, {"ko": "셔틀 어디서 타나요?", "ja": "シャトルはどこで乗れますか？", "vi": "Xe đưa đón ở đâu?", "th": "ขึ้นรถรับส่งที่ไหนครับ/ค่ะ?", "zh-CN": "在哪坐班车？", "zh-TW": "在哪裡搭接駁車？", "en": "Where do I take the shuttle?", "local": "Where is the shuttle?"}, {"ko": "짐이 도착하지 않았어요.", "ja": "荷物が届いていません。", "vi": "Hành lý chưa đến.", "th": "กระเป๋าของฉันยังไม่มาครับ/ค่ะ", "zh-CN": "我的行李没到。", "zh-TW": "我的行李沒到。", "en": "My bag is missing.", "local": "My bag is missing"}, {"ko": "세관이 어디인가요?", "ja": "税関はどこですか？", "vi": "Hải quan ở đâu?", "th": "ศุลกากรอยู่ที่ไหนครับ/ค่ะ?", "zh-CN": "海关在哪里？", "zh-TW": "海關在哪裡？", "en": "Where is customs?", "local": "Where is customs?"}], "🏨": [{"ko": "체크인 부탁합니다.", "ja": "チェックインお願いします。", "vi": "Nhờ làm thủ tục nhận phòng.", "th": "ขอเช็คอินครับ/ค่ะ", "zh-CN": "请帮我办理入住。", "zh-TW": "請幫我辦理入住。", "en": "Check-in, please.", "local": "Check-in, please"}, {"ko": "와이파이 비번 뭐죠?", "ja": "Wi-Fiのパスワードは？", "vi": "Mật khẩu Wi-Fi?", "th": "รหัส Wi-Fi คืออะไร?", "zh-CN": "Wi-Fi密码是什么？", "zh-TW": "Wi-Fi密碼是什麼？", "en": "What's the Wi-Fi password?", "local": "WiFi password?"}, {"ko": "수건 더 주세요.", "ja": "タオルをもっとください。", "vi": "Cho thêm khăn.", "th": "ขอผ้าเช็ดตัวเพิ่มครับ/ค่ะ", "zh-CN": "再给我毛巾。", "zh-TW": "再給我毛巾。", "en": "Extra towel, please.", "local": "Extra towel, please"}, {"ko": "체크아웃 늦게 되나요?", "ja": "レイトチェックアウトできますか？", "vi": "Có thể trả phòng muộn không?", "th": "เช็คเอ้าท์ช้าได้ไหมครับ/ค่ะ?", "zh-CN": "可以晚点退房吗？", "zh-TW": "可以晚點退房嗎？", "en": "Can I have a late check-out?", "local": "Late check-out possible?"}, {"ko": "방이 너무 시끄러워요.", "ja": "部屋がうるさすぎます。", "vi": "Phòng quá ồn.", "th": "ห้องเสียงดังมากครับ/ค่ะ", "zh-CN": "房间太吵了。", "zh-TW": "房間太吵了。", "en": "The room is too noisy.", "local": "Room is too noisy"}], "🍴": [{"ko": "두 명입니다.", "ja": "二人です。", "vi": "Hai người.", "th": "สองคนครับ/ค่ะ", "zh-CN": "两位。", "zh-TW": "兩位。", "en": "Table for two.", "local": "Table for two"}, {"ko": "계산서 주세요.", "ja": "お会計お願いします。", "vi": "Tính tiền.", "th": "เช็คบิลครับ/ค่ะ", "zh-CN": "请结账。", "zh-TW": "請結帳。", "en": "Check, please.", "local": "Check, please"}, {"ko": "포장해 주세요.", "ja": "持ち帰りにします。", "vi": "Gói mang về.", "th": "ห่อกลับบ้านครับ/ค่ะ", "zh-CN": "打包带走。", "zh-TW": "打包帶走。", "en": "To go, please.", "local": "To go, please"}, {"ko": "나눠서 계산할게요.", "ja": "別々に払います。", "vi": "Chúng tôi trả riêng.", "th": "แยกบิลครับ/ค่ะ", "zh-CN": "我们分开付。", "zh-TW": "我們分開付。", "en": "Can we split the bill?", "local": "Can we split the bill?"}, {"ko": "추천 메뉴가 뭐죠?", "ja": "おすすめは何ですか？", "vi": "Món nào ngon?", "th": "มีอะไรแนะนำครับ/ค่ะ?", "zh-CN": "有什么推荐的？", "zh-TW": "有什麼推薦的？", "en": "What do you recommend?", "local": "What do you recommend?"}, {"ko": "얼음 빼주세요.", "ja": "氷なしでお願いします。", "vi": "Không cho đá.", "th": "ไม่ใส่น้ำแข็งครับ/ค่ะ", "zh-CN": "不要冰。", "zh-TW": "不要冰。", "en": "No ice, please.", "local": "No ice, please"}], "🚌": [{"ko": "지하철역 어디예요?", "ja": "地下鉄の駅はどこですか？", "vi": "Ga tàu điện ngầm ở đâu?", "th": "สถานีรถไฟใต้ดินอยู่ที่ไหน?", "zh-CN": "地铁站在哪里？", "zh-TW": "地鐵站在哪裡？", "en": "Where is the subway?", "local": "Where is the subway?"}, {"ko": "이 주소로 가주세요.", "ja": "この住所まで行ってください。", "vi": "Đi đến địa chỉ này.", "th": "ไปที่อยู่นี้ครับ/ค่ะ", "zh-CN": "请去这个地址。", "zh-TW": "請去這個地址。", "en": "Go to this address.", "local": "Go to this address"}, {"ko": "여기 세워주세요.", "ja": "ここで止めてください。", "vi": "Dừng ở đây.", "th": "จอดที่นี่ครับ/ค่ะ", "zh-CN": "在这里停。", "zh-TW": "在這裡停。", "en": "Stop here, please.", "local": "Stop here, please"}, {"ko": "노선도 있나요?", "ja": "路線図はありますか？", "vi": "Có bản đồ tuyến không?", "th": "มีแผนที่รถไฟไหมครับ/ค่ะ?", "zh-CN": "有路线图吗？", "zh-TW": "有路線圖嗎？", "en": "Subway map, please.", "local": "Subway map, please"}, {"ko": "요금이 얼마인가요?", "ja": "料金はいくらですか？", "vi": "Giá vé bao nhiêu?", "th": "ค่าโดยสารเท่าไหร่?", "zh-CN": "票价多少？", "zh-TW": "票價多少？", "en": "How much is the fare?", "local": "How much is the fare?"}], "🛍️": [{"ko": "이거 얼마인가요?", "ja": "これはいくらですか？", "vi": "Cái này bao nhiêu?", "th": "อันนี้เท่าไหร่ครับ/ค่ะ?", "zh-CN": "这个多少钱？", "zh-TW": "這個多少錢？", "en": "How much is this?", "local": "How much is this?"}, {"ko": "피팅룸 어디예요?", "ja": "試着室はどこですか？", "vi": "Phòng thử đồ ở đâu?", "th": "ห้องลองเสื้อผ้าอยู่ที่ไหน?", "zh-CN": "试衣间在哪里？", "zh-TW": "試衣間在哪裡？", "en": "Where is the fitting room?", "local": "Where is the fitting room?"}, {"ko": "환불 가능한가요?", "ja": "返品できますか？", "vi": "Có thể hoàn tiền không?", "th": "คืนสินค้าได้ไหมครับ/ค่ะ?", "zh-CN": "可以退款吗？", "zh-TW": "可以退款嗎？", "en": "Can I return this?", "local": "Can I return this?"}, {"ko": "애플페이 되나요?", "ja": "Apple Payは使えますか？", "vi": "Dùng Apple Pay được không?", "th": "ใช้ Apple Pay ได้ไหมครับ/ค่ะ?", "zh-CN": "可以用Apple Pay吗？", "zh-TW": "可以用Apple Pay嗎？", "en": "Do you take Apple Pay?", "local": "Do you take Apple Pay?"}, {"ko": "그냥 구경 중이에요.", "ja": "見ているだけです。", "vi": "Tôi chỉ xem thôi.", "th": "แค่ดูอยู่ครับ/ค่ะ", "zh-CN": "我只是随便看看。", "zh-TW": "我只是隨便看看。", "en": "Just looking.", "local": "I'm just looking"}], "🚨": [{"ko": "도와주세요!", "ja": "助けてください！", "vi": "Cứu với!", "th": "ช่วยด้วย!", "zh-CN": "救命！", "zh-TW": "救命！", "en": "Help!", "local": "Help!"}, {"ko": "911을 불러주세요.", "ja": "911を呼んでください。", "vi": "Gọi 911.", "th": "โทร 911 ด้วยครับ/ค่ะ", "zh-CN": "请拨打911。", "zh-TW": "請撥打911。", "en": "Call 911!", "local": "Call 911!"}, {"ko": "폰을 도둑맞았어요.", "ja": "スマホを盗まれました。", "vi": "Điện thoại của tôi bị trộm.", "th": "มือถือของฉันถูกขโมย", "zh-CN": "我的手机被偷了。", "zh-TW": "我的手機被偷了。", "en": "My phone was stolen.", "local": "My phone was stolen"}, {"ko": "병원이 어디인가요?", "ja": "病院はどこですか？", "vi": "Bệnh viện ở đâu?", "th": "โรงพยาบาลอยู่ที่ไหน?", "zh-CN": "医院在哪里？", "zh-TW": "醫院在哪裡？", "en": "Where is the hospital?", "local": "Where is the hospital?"}, {"ko": "길을 잃었어요.", "ja": "道に迷いました。", "vi": "Tôi bị lạc.", "th": "ฉันหลงทางครับ/ค่ะ", "zh-CN": "我迷路了。", "zh-TW": "我迷路了。", "en": "I'm lost.", "local": "I am lost"}]}, "korea": {"✈️": [{"ko": "여행하러 왔습니다.", "ja": "旅行に来ました。", "vi": "Tôi đến du lịch.", "th": "มาท่องเที่ยวครับ/ค่ะ", "zh-CN": "我来旅游的。", "zh-TW": "我來旅遊的。", "en": "I'm here for travel.", "local": "여행하러 왔습니다. (Yeo-haeng-ha-reo wat-seum-ni-da)"}, {"ko": "출구가 어디인가요?", "ja": "出口はどこですか？", "vi": "Lối ra ở đâu?", "th": "ทางออกอยู่ที่ไหน?", "zh-CN": "出口在哪里？", "zh-TW": "出口在哪裡？", "en": "Where is the exit?", "local": "출구가 어디인가요? (Chul-gu-ga eo-di-in-ga-yo?)"}, {"ko": "철도/택시 타는 곳이 어디예요?", "ja": "電車/タクシー乗り場はどこですか？", "vi": "Nơi đón tàu/taxi ở đâu?", "th": "ที่ขึ้นรถไฟ/แท็กซี่อยู่ที่ไหน?", "zh-CN": "在哪里坐地铁/出租车？", "zh-TW": "在哪裡搭地鐵/計程車？", "en": "Where is the train/taxi stand?", "local": "공항철도/택시 타는 곳이 어디예요?"}, {"ko": "환전소가 어디인가요?", "ja": "両替所はどこですか？", "vi": "Chỗ đổi tiền ở đâu?", "th": "ที่แลกเงินอยู่ที่ไหน?", "zh-CN": "换汇处在哪里？", "zh-TW": "換匯處在哪裡？", "en": "Where is the currency exchange?", "local": "환전소가 어디인가요?"}], "🏨": [{"ko": "체크인 부탁합니다.", "ja": "チェックインお願いします。", "vi": "Nhờ làm thủ tục nhận phòng.", "th": "ขอเช็คอินครับ/ค่ะ", "zh-CN": "请帮我办理入住。", "zh-TW": "請幫我辦理入住。", "en": "Check-in, please.", "local": "체크인 부탁합니다. (Check-in bu-tak-ham-ni-da)"}, {"ko": "방 청소 부탁합니다.", "ja": "部屋の清掃をお願いします。", "vi": "Nhờ dọn phòng.", "th": "ช่วยทำความสะอาดห้องด้วยครับ/ค่ะ", "zh-CN": "请打扫房间。", "zh-TW": "請打掃房間。", "en": "Please clean the room.", "local": "방 청소 부탁합니다."}, {"ko": "수건 더 주세요.", "ja": "タオルをもっとください。", "vi": "Cho thêm khăn.", "th": "ขอผ้าเช็ดตัวเพิ่มครับ/ค่ะ", "zh-CN": "再给我毛巾。", "zh-TW": "再給我毛巾。", "en": "More towels, please.", "local": "수건 더 주세요. (Su-geon deo ju-se-yo)"}, {"ko": "와이파이 비밀번호가 뭐예요?", "ja": "Wi-Fiのパスワードは？", "vi": "Mật khẩu Wi-Fi?", "th": "รหัส Wi-Fi คืออะไรครับ/ค่ะ?", "zh-CN": "Wi-Fi密码是什么？", "zh-TW": "Wi-Fi密碼是什麼？", "en": "What's the Wi-Fi password?", "local": "와이파이 비밀번호가 뭐예요?"}, {"ko": "짐 좀 맡겨주세요.", "ja": "荷物を預けてください。", "vi": "Nhờ giữ hành lý.", "th": "ช่วยฝากกระเป๋าด้วยครับ/ค่ะ", "zh-CN": "请帮我存放行李。", "zh-TW": "請幫我存放行李。", "en": "Please store my luggage.", "local": "짐 좀 맡겨주세요."}], "🍴": [{"ko": "매워요?", "ja": "辛いですか？", "vi": "Có cay không?", "th": "เผ็ดไหมครับ/ค่ะ?", "zh-CN": "辣吗？", "zh-TW": "辣嗎？", "en": "Is it spicy?", "local": "매워요? (Mae-wo-yo?)"}, {"ko": "계산서 주세요.", "ja": "お会計お願いします。", "vi": "Tính tiền.", "th": "เช็คบิลครับ/ค่ะ", "zh-CN": "请结账。", "zh-TW": "請結帳。", "en": "Check, please.", "local": "계산서 주세요. (Gye-san-seo ju-se-yo)"}, {"ko": "메뉴판 보여주세요.", "ja": "メニューを見せてください。", "vi": "Cho tôi xem thực đơn.", "th": "ขอดูเมนูด้วยครับ/ค่ะ", "zh-CN": "请给我菜单。", "zh-TW": "請給我菜單。", "en": "Show me the menu.", "local": "메뉴판 보여주세요."}, {"ko": "맥주 하나 더 주세요.", "ja": "ビールをもう一つください。", "vi": "Cho thêm một bia.", "th": "ขอเบียร์อีกหนึ่งแก้วครับ/ค่ะ", "zh-CN": "再来一杯啤酒。", "zh-TW": "再來一杯啤酒。", "en": "One more beer, please.", "local": "맥주 하나 더 주세요."}, {"ko": "안 맵게 해주세요.", "ja": "辛くしないでください。", "vi": "Không cay.", "th": "ไม่เผ็ดครับ/ค่ะ", "zh-CN": "不要辣。", "zh-TW": "不要辣。", "en": "Not spicy, please.", "local": "안 맵게 해주세요."}, {"ko": "물 좀 주세요.", "ja": "お水をください。", "vi": "Cho tôi nước.", "th": "ขอน้ำด้วยครับ/ค่ะ", "zh-CN": "请给我水。", "zh-TW": "請給我水。", "en": "Water, please.", "local": "물 좀 주세요."}], "🚌": [{"ko": "이 주소로 가주세요.", "ja": "この住所まで行ってください。", "vi": "Đi đến địa chỉ này.", "th": "ไปที่อยู่นี้ครับ/ค่ะ", "zh-CN": "请去这个地址。", "zh-TW": "請去這個地址。", "en": "Go to this address.", "local": "이 주소로 가주세요. (I ju-so-ro ga-ju-se-yo)"}, {"ko": "여기서 세워주세요.", "ja": "ここで止めてください。", "vi": "Dừng ở đây.", "th": "จอดที่นี่ครับ/ค่ะ", "zh-CN": "在这里停。", "zh-TW": "在這裡停。", "en": "Stop here.", "local": "여기서 세워주세요."}, {"ko": "지하철역이 어디예요?", "ja": "地下鉄の駅はどこですか？", "vi": "Ga tàu điện ngầm ở đâu?", "th": "สถานีรถไฟใต้ดินอยู่ที่ไหน?", "zh-CN": "地铁站在哪里？", "zh-TW": "地鐵站在哪裡？", "en": "Where is the subway station?", "local": "지하철역이 어디예요?"}, {"ko": "교통카드 주세요.", "ja": "交通カードをください。", "vi": "Cho tôi thẻ giao thông.", "th": "ขอบัตรโดยสารด้วยครับ/ค่ะ", "zh-CN": "请给我交通卡。", "zh-TW": "請給我交通卡。", "en": "A transit card, please.", "local": "교통카드 주세요."}], "🛍️": [{"ko": "이거 얼마예요?", "ja": "これはいくらですか？", "vi": "Cái này bao nhiêu?", "th": "อันนี้เท่าไหร่ครับ/ค่ะ?", "zh-CN": "这个多少钱？", "zh-TW": "這個多少錢？", "en": "How much is this?", "local": "이거 얼마예요? (I-geo eol-ma-ye-yo?)"}, {"ko": "깎아주세요.", "ja": "値引きしてください。", "vi": "Bớt giá cho tôi.", "th": "ลดราคาให้ฉันด้วยครับ/ค่ะ", "zh-CN": "便宜一点。", "zh-TW": "便宜一點。", "en": "Give me a discount.", "local": "깎아주세요. (Kkak-a-ju-se-yo)"}, {"ko": "이걸로 살게요.", "ja": "これにします。", "vi": "Tôi lấy cái này.", "th": "ขออันนี้ครับ/ค่ะ", "zh-CN": "我买这个。", "zh-TW": "我買這個。", "en": "I'll take this.", "local": "이걸로 할게요."}, {"ko": "면세 되나요?", "ja": "免税になりますか？", "vi": "Được miễn thuế không?", "th": "ขอ tax free ได้ไหมครับ/ค่ะ?", "zh-CN": "可以免税吗？", "zh-TW": "可以免稅嗎？", "en": "Is tax-free available?", "local": "택스 프리 돼요?"}, {"ko": "봉투 주세요.", "ja": "袋をください。", "vi": "Cho túi.", "th": "ขอถุงด้วยครับ/ค่ะ", "zh-CN": "请给我袋子。", "zh-TW": "請給我袋子。", "en": "A bag, please.", "local": "봉투 주세요."}], "🚨": [{"ko": "도와주세요!", "ja": "助けてください！", "vi": "Cứu với!", "th": "ช่วยด้วย!", "zh-CN": "救命！", "zh-TW": "救命！", "en": "Help!", "local": "도와주세요! (Do-wa-ju-se-yo!)"}, {"ko": "병원 어디예요?", "ja": "病院はどこですか？", "vi": "Bệnh viện ở đâu?", "th": "โรงพยาบาลอยู่ที่ไหน?", "zh-CN": "医院在哪里？", "zh-TW": "醫院在哪裡？", "en": "Where is the hospital?", "local": "병원이 어디예요?"}, {"ko": "여권을 잃어버렸어요.", "ja": "パスポートをなくしました。", "vi": "Tôi mất hộ chiếu.", "th": "ฉันทำหนังสือเดินทางหาย", "zh-CN": "我的护照丢了。", "zh-TW": "我的護照丟了。", "en": "I lost my passport.", "local": "여권을 잃어버렸어요."}, {"ko": "약국이 어디예요?", "ja": "薬局はどこですか？", "vi": "Tiệm thuốc ở đâu?", "th": "ร้านขายยาอยู่ที่ไหน?", "zh-CN": "药店在哪里？", "zh-TW": "藥局在哪裡？", "en": "Where is the pharmacy?", "local": "약국이 어디예요?"}, {"ko": "경찰 불러주세요.", "ja": "警察を呼んでください。", "vi": "Gọi cảnh sát.", "th": "ช่วยเรียกตำรวจด้วยครับ/ค่ะ", "zh-CN": "请报警。", "zh-TW": "請報警。", "en": "Call the police.", "local": "경찰 불러주세요."}]}};
+
+        const COUNTRY_TO_PHRASE_KEY = {
+        tokyo:'japan', osaka:'japan', fukuoka:'japan',
+        danang:'vietnam', hochiminh:'vietnam',
+        bangkok:'thailand', taipei:'taiwan', hongkong:'hongkong',
+        nyc:'usa', seoul:'korea'
+    };
+
+    function renderPhrases(cityLang) {
+        const phraseKey = COUNTRY_TO_PHRASE_KEY[currentCountryId] || 'japan';
+        const phraseData = PHRASES[phraseKey];
+        const tabs = document.getElementById('phraseTabs');
+        const contents = document.getElementById('phraseContents');
+        if (!tabs || !contents || !phraseData) return;
+
+        // 현재 UI 언어 (내장 다국어 데이터에서 직접 가져옴)
+        const uiLang = userSelectedLang;
+        const cats = Object.keys(phraseData);
+
+        tabs.innerHTML = cats.map((cat, i) =>
+            `<button class="phrase-tab-btn${i===0?' active':''}" onclick="showPhraseTab(event,'pcat${i}')">${cat}</button>`
+        ).join('');
+
+        contents.innerHTML = cats.map((cat, i) => `
+            <div id="pcat${i}" class="phrase-tab-content${i===0?' active':''}">
+                <div class="phrase-card-new">
+                    ${phraseData[cat].map(p => `
+                        <div class="phrase-item-new">
+                            <div class="phrase-ko">${p[uiLang] || p.ko}</div>
+                            <div class="phrase-local">${p.local}</div>
+                        </div>`).join('')}
+                </div>
+            </div>`).join('');
+    }
+
+    // 체크리스트 렌더링
+    function renderChecklist() {
+        const tabs = document.getElementById('checklistTabs');
+        const contents = document.getElementById('checklistContents');
+        if (!tabs || !contents) return;
+
+        const cats = Object.keys(CHECKLIST_DATA);
+
+        // 탭 버튼
+        tabs.innerHTML = cats.map((cat, i) => {
+            const label = (CHECKLIST_CATEGORY_I18N[cat] || {})[userSelectedLang] || cat;
+            return `<button class="phrase-tab-btn${i===0?' active':''}" onclick="showChecklistTab(event,'chtab${i}')">${label}</button>`;
+        }).join('');
+
+        // 탭 내용
+        contents.innerHTML = cats.map((cat, catIdx) => {
+            const items = CHECKLIST_DATA[cat];
+            const itemsHtml = items.map((item, i) => {
+                const id = `chk_${catIdx}_${i}`;
+                const checked = localStorage.getItem('chk_' + id) === '1';
+                const itemLabel = (CHECKLIST_ITEM_I18N[item] || {})[userSelectedLang] || item;
+                return `<div class="checklist-item">
+                    <input type="checkbox" id="${id}" ${checked?'checked':''} onchange="saveCheck(this)">
+                    <label for="${id}">${itemLabel}</label>
+                </div>`;
+            }).join('');
+            return `<div id="chtab${catIdx}" class="phrase-tab-content${catIdx===0?' active':''}">${itemsHtml}</div>`;
+        }).join('');
+    }
+
+    function showChecklistTab(e, tabId) {
+        document.querySelectorAll('#checklistContents .phrase-tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('#checklistTabs .phrase-tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId)?.classList.add('active');
+        e.target.classList.add('active');
+    }
+
+    function saveCheck(el) {
+        localStorage.setItem('chk_' + el.id, el.checked ? '1' : '0');
+    }
+
+    // ============================================================
+    // 8. 환율
+    // ============================================================
+    async function fetchExchangeRate(from, to) {
+        try {
+            const res = await fetch(`https://open.er-api.com/v6/latest/${from}`);
+            const data = await res.json();
+            return data.rates[to] || 1;
+        } catch { return 1; }
+    }
+
+    // 날씨 설명 다국어 번역 테이블
+    const WEATHER_I18N = {
+        ko: { '맑음':'맑음','흐림':'흐림','비':'비','이슬비':'이슬비','뇌우':'뇌우','눈':'눈','안개':'안개','연무':'연무','실안개':'실안개','먼지':'먼지','짙은 안개':'짙은 안개','황사':'황사','화산재':'화산재','돌풍':'돌풍','토네이도':'토네이도' },
+        ja: { '맑음':'晴れ','흐림':'曇り','비':'雨','이슬비':'霧雨','뇌우':'雷雨','눈':'雪','안개':'霧','연무':'煙霧','실안개':'薄霧','먼지':'砂塵','짙은 안개':'濃霧','황사':'黄砂','화산재':'火山灰','돌풍':'スコール','토네이도':'竜巻' },
+        vi: { '맑음':'Trời quang','흐림':'Nhiều mây','비':'Mưa','이슬비':'Mưa phùn','뇌우':'Giông bão','눈':'Tuyết','안개':'Sương mù','연무':'Khói mù','실안개':'Sương nhẹ','먼지':'Bụi','짙은 안개':'Sương dày','황사':'Bão cát','화산재':'Tro núi lửa','돌풍':'Gió giật','토네이도':'Lốc xoáy' },
+        th: { '맑음':'แดดจัด','흐림':'มีเมฆ','비':'ฝนตก','이슬비':'ฝนปรอย','뇌우':'พายุฝนฟ้าคะนอง','눈':'หิมะ','안개':'หมอก','연무':'ควันหมอก','실안개':'หมอกบาง','먼지':'ฝุ่น','짙은 안개':'หมอกหนา','황사':'พายุทราย','화산재':'เถ้าภูเขาไฟ','돌풍':'พายุฝนกระโชก','토네이도':'พายุทอร์นาโด' },
+        'zh-CN': { '맑음':'晴天','흐림':'多云','비':'下雨','이슬비':'毛毛雨','뇌우':'雷暴','눈':'下雪','안개':'雾','연무':'烟雾','실안개':'薄雾','먼지':'沙尘','짙은 안개':'浓雾','황사':'沙尘暴','화산재':'火山灰','돌풍':'飑','토네이도':'龙卷风' },
+        'zh-TW': { '맑음':'晴天','흐림':'多雲','비':'下雨','이슬비':'毛毛雨','뇌우':'雷暴','눈':'下雪','안개':'霧','연무':'煙霧','실안개':'薄霧','먼지':'沙塵','짙은 안개':'濃霧','황사':'沙塵暴','화산재':'火山灰','돌풍':'颮','토네이도':'龍捲風' },
+        en: { '맑음':'Clear','흐림':'Cloudy','비':'Rain','이슬비':'Drizzle','뇌우':'Thunderstorm','눈':'Snow','안개':'Fog','연무':'Smoke','실안개':'Haze','먼지':'Dust','짙은 안개':'Dense Fog','황사':'Sand','화산재':'Ash','돌풍':'Squall','토네이도':'Tornado' }
+    };
+
+    function translateWeatherDesc(koDesc) {
+        const table = WEATHER_I18N[userSelectedLang] || WEATHER_I18N.en;
+        return table[koDesc] || koDesc;
+    }
+
+    // 마지막으로 받은 날씨 정보 캐시 (언어 변경 시 재표시용)
+    let _lastWeather = null;
+
+    async function fetchWeather(lat, lon, cityName) {
+        const el = document.getElementById('weatherDisplay');
+        if (!el) return;
+        el.textContent = '...';
+        try {
+            // 백엔드 Flask API 사용 (OpenWeatherMap 키는 서버에서 관리)
+            const res = await fetch(`/api/weather/${encodeURIComponent(cityName)}`);
+            const json = await res.json();
+            _lastWeather = { cityName, temp: json.temp, descKo: json.desc };
+            el.textContent = `${cityName} ${json.temp}°C ${translateWeatherDesc(json.desc)}`;
+        } catch(e) {
+            el.textContent = `${cityName} -`;
+        }
+    }
+
+    function refreshWeatherDisplay() {
+        if (!_lastWeather) return;
+        const el = document.getElementById('weatherDisplay');
+        if (el) el.textContent = `${_lastWeather.cityName} ${_lastWeather.temp}°C ${translateWeatherDesc(_lastWeather.descKo)}`;
+    }
+
+    // 통화별 환전소 최소 단위
+    // 계산기용 환전 최소 단위 (입력값 반올림 기준)
+    const CURRENCY_UNIT = {
+        JPY: 100,
+        VND: 100,
+    };
+
+    function getUnit(sourceCurrency, targetCurrency) {
+        return CURRENCY_UNIT[sourceCurrency] || 1;
+    }
+
+    // 결과값 포맷: 소수점 2자리, 천단위 콤마
+    function formatResult(value) {
+        const fixed = value.toFixed(2).replace(/\.00$/, '');
+        const parts = fixed.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+    }
+
+    // 상단 칩 전용: target 기준 보기 좋은 단위 자동 계산
+    // - KRW·JPY 등 정수 통화: 결과 1 이상 나오는 최소 단위
+    // - USD·EUR 등 소수 통화: 결과 0.01 이상 나오는 최소 단위 (소수점 2자리 의미있게)
+    const DECIMAL_CURRENCIES = ['USD', 'EUR'];
+    function calcDisplayUnit(rate, targetCurrency) {
+        const threshold = DECIMAL_CURRENCIES.includes(targetCurrency) ? 0.01 : 1;
+        const steps = [1, 10, 100, 1000, 10000, 100000];
+        for (const step of steps) {
+            if (rate * step >= threshold) return step;
+        }
+        return 100000;
+    }
+
+    async function updateRateDisplay() {
+        const rateDisplay = document.getElementById('rateDisplay');
+        const rateCurrencyLabel = document.getElementById('rateCurrencyLabel');
+        if (!rateDisplay) return;
+
+        const langCurrency = LANG_TO_CURRENCY[userSelectedLang] || 'KRW';
+        sourceCurrency = COUNTRIES_DATA[currentCountryId]?.currency || 'JPY';
+
+        if (langCurrency === sourceCurrency) {
+            rateDisplay.textContent = '-';
+            if (rateCurrencyLabel) rateCurrencyLabel.textContent = t('same_currency');
+            targetCurrency = sourceCurrency;
+            currentDisplayRate = 1;
+            return;
+        }
+
+        targetCurrency = langCurrency;
+        rateDisplay.textContent = '...';
+
+        const rate = await fetchExchangeRate(sourceCurrency, targetCurrency);
+        currentDisplayRate = rate;
+
+        // 상단 칩: 결과가 1 이상 나오는 단위 자동 선택
+        const displayUnit = calcDisplayUnit(rate, targetCurrency);
+        const rawValue = rate * displayUnit;
+
+        rateDisplay.textContent = `${formatResult(rawValue)} ${targetCurrency}`;
+        if (rateCurrencyLabel) rateCurrencyLabel.textContent = `${formatNumber(displayUnit)} ${sourceCurrency}`;
+    }
+
+    function updateCalcCurrencies() {
+        sourceCurrency = COUNTRIES_DATA[currentCountryId]?.currency || 'JPY';
+        targetCurrency = LANG_TO_CURRENCY[userSelectedLang] || 'KRW';
+        const src = document.getElementById('calcSourceCurrency');
+        const tgt = document.getElementById('calcTargetCurrency');
+        const unitInfo = document.getElementById('calcUnitInfo');
+        const unitMsg = document.getElementById('calcUnitMsg');
+        if (src) src.textContent = sourceCurrency;
+        if (tgt) tgt.textContent = targetCurrency;
+        if (unitInfo) unitInfo.style.display = (getUnit(sourceCurrency, targetCurrency) > 1) ? 'flex' : 'none';
+        if (unitMsg) unitMsg.textContent = t('calc_unit_msg', {curr: sourceCurrency, unit: formatNumber(getUnit(sourceCurrency, targetCurrency))});
+    }
+
+    function calculateExchange() {
+        const fi = document.getElementById('foreignInput');
+        const ko = document.getElementById('krwOutput');
+        let val = parseFloat(removeCommas(fi.value));
+        if (!val || isNaN(val)) { alert(t('alert_enter_amount')); return; }
+
+        // 통화별 최소 환전 단위로 반올림 (0이 되면 최소 단위로 올림)
+        const unit = getUnit(sourceCurrency, targetCurrency);
+        if (unit > 1) {
+            let rounded = Math.round(val / unit) * unit;
+            if (rounded === 0) rounded = unit;  // 최소 단위 미만이면 1단위로 올림
+            if (rounded !== val) {
+                fi.value = formatNumber(rounded);
+                val = rounded;
+                alert(t('alert_unit_adjust', {curr: sourceCurrency, unit: formatNumber(unit), val: formatNumber(rounded)}));
+            }
+        }
+
+        const rawResult = val * currentDisplayRate;
+        ko.value = formatResult(rawResult) + ' ' + targetCurrency;
+    }
+
+    // ============================================================
+    // 9. 번역기
+    // ============================================================
+    function updateTranslateButtons() {
+        const cityLang = COUNTRIES_DATA[currentCountryId]?.lang || 'en';
+        const targetBtn = document.getElementById('targetLangBtn');
+        const reverseBtn = document.getElementById('reverseBtn');
+        if (targetBtn) targetBtn.textContent = t('btn_to_local', {lang: LANG_NAMES[cityLang]});
+        if (reverseBtn) reverseBtn.textContent = t('btn_to_ui');
+    }
+
+    function translateAction(mode) {
+        const text = document.getElementById('sourceText').value;
+        if (!text) { alert(t('alert_empty')); return; }
+        const cityLang = COUNTRIES_DATA[currentCountryId]?.lang || 'en';
+        const targetLang = mode === 'target' ? cityLang : userSelectedLang;
+        fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`)
+            .then(r => r.json())
+            .then(data => {
+                const rb = document.getElementById('transResult');
+                if (data?.[0]?.[0]?.[0]) { rb.innerText = data[0][0][0]; rb.style.display = 'block'; }
+            })
+            .catch(() => alert(t('alert_translate_error')));
+    }
+
+    // ============================================================
+    // 10. 알레르기
+    // ============================================================
+    function buildAllergySentence(lang, itemText) {
+        const tpl = {
+            ko:`${itemText} 알레르기가 있어요.`, ja:`${itemText}アレルギーがあります。`,
+            vi:`Tôi bị dị ứng ${itemText}.`, th:`ฉันแพ้${itemText}`,
+            'zh-CN':`我对${itemText}过敏。`, 'zh-TW':`我對${itemText}過敏。`, en:`I am allergic to ${itemText}.`
         };
+        return tpl[lang] || tpl.en;
+    }
 
-        const allergyVocabulary = {
-            shrimp: { ko: '새우', ja: 'えび', vi: 'tôm', th: 'กุ้ง', 'zh-TW': '蝦', 'zh-CN': '虾', en: 'shrimp' },
-            crab: { ko: '게', ja: 'かに', vi: 'cua', th: 'ปู', 'zh-TW': '蟹', 'zh-CN': '蟹', en: 'crab' },
-            shellfish: { ko: '조개/갑각류', ja: '貝類・甲殻類', vi: 'động vật có vỏ', th: 'หอยและสัตว์เปลือกแข็ง', 'zh-TW': '貝類與甲殼類', 'zh-CN': '贝类和甲壳类', en: 'shellfish' },
-            peanut: { ko: '땅콩', ja: 'ピーナッツ', vi: 'đậu phộng', th: 'ถั่วลิสง', 'zh-TW': '花生', 'zh-CN': '花生', en: 'peanut' },
-            egg: { ko: '계란', ja: '卵', vi: 'trứng', th: 'ไข่', 'zh-TW': '雞蛋', 'zh-CN': '鸡蛋', en: 'egg' },
-            milk: { ko: '우유', ja: '牛乳', vi: 'sữa', th: 'นม', 'zh-TW': '牛奶', 'zh-CN': '牛奶', en: 'milk' },
-            wheat: { ko: '밀', ja: '小麦', vi: 'lúa mì', th: 'แป้งสาลี', 'zh-TW': '小麥', 'zh-CN': '小麦', en: 'wheat' },
-            buckwheat: { ko: '메밀', ja: 'そば', vi: 'kiều mạch', th: 'บัควีท', 'zh-TW': '蕎麥', 'zh-CN': '荞麦', en: 'buckwheat' }
-        };
+    function updateAllergyPhrase() {
+        const sel = document.getElementById('allergySelector');
+        const koEl = document.getElementById('allergyKoPhrase');
+        const localEl = document.getElementById('allergyLocalPhrase');
+        if (!sel || !koEl || !localEl) return;
+        const vocab = ALLERGY_VOCAB[sel.value];
+        if (!vocab) return;
+        const cityLang = COUNTRIES_DATA[currentCountryId]?.lang || 'en';
+        koEl.textContent = buildAllergySentence('ko', vocab.ko);
+        localEl.textContent = buildAllergySentence(cityLang, vocab[cityLang] || vocab.en);
+    }
 
-        // 현재 환율 데이터 저장
-        let currentDisplayRate = currentRate;
-        let sourceCurrency = currentCurrency;
-        let targetCurrency = 'KRW';
+    // ============================================================
+    // 11. 슬라이더 / 탭
+    // ============================================================
+    function goInfoSlide(index) {
+        const track = document.getElementById('infoSliderTrack');
+        if (!track) return;
+        track.scrollTo({ left: track.clientWidth * index, behavior: 'smooth' });
+        setActiveInfoSlideBtn(index);
+    }
 
-        // 숫자 쉼표 포맷
-        function formatNumber(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
+    function syncInfoSlideNav() {
+        const track = document.getElementById('infoSliderTrack');
+        if (!track) return;
+        setActiveInfoSlideBtn(Math.round(track.scrollLeft / Math.max(track.clientWidth, 1)));
+    }
 
-        function removeCommas(str) {
-            return str.replace(/,/g, '');
-        }
+    function setActiveInfoSlideBtn(index) {
+        document.querySelectorAll('#infoSliderNav .info-slider-btn').forEach((btn, idx) => {
+            btn.classList.toggle('active', idx === index);
+        });
+    }
 
-        // 환율 API 호출
-        async function fetchExchangeRate(from, to) {
-            try {
-                const response = await fetch(`https://open.er-api.com/v6/latest/${from}`);
-                const data = await response.json();
-                return data.rates[to] || 1;
-            } catch (error) {
-                console.error('Exchange rate fetch error:', error);
-                return 1;
-            }
-        }
+    function showTab(event, id) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
 
-        // 환율 표시 업데이트
-        async function updateRateDisplay() {
-            const rateDisplay = document.getElementById('rateDisplay');
-            const rateCurrencyLabel = document.getElementById('rateCurrencyLabel');
-            
-            if (!rateDisplay || !rateCurrencyLabel) return;
+    function showPhraseTab(event, id) {
+        document.querySelectorAll('.phrase-tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.phrase-tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
 
-            const langCurrency = langToCurrency[userSelectedLang];
-            
-            if (langCurrency === currentCurrency) {
-                rateDisplay.textContent = '-';
-                rateCurrencyLabel.textContent = '(같은 통화)';
-                sourceCurrency = currentCurrency;
-                targetCurrency = currentCurrency;
-                currentDisplayRate = 1;
-                return;
-            }
+    // ============================================================
+    // 12. 유틸
+    // ============================================================
+    function formatNumber(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+    function removeCommas(s) { return s.replace(/,/g, ''); }
 
-            sourceCurrency = currentCurrency;
-            targetCurrency = langCurrency;
-            
-            const rate = await fetchExchangeRate(sourceCurrency, targetCurrency);
-            currentDisplayRate = rate;
+    // ============================================================
+    // 13. 초기화
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        // 언어 선택기 복원
+        const langSel = document.getElementById('langSelector');
+        if (langSel) langSel.value = userSelectedLang;
 
-            let displayValue;
-            let baseAmount;
-            
-            if (sourceCurrency === 'JPY' || sourceCurrency === 'VND') {
-                baseAmount = 100;
-                displayValue = formatNumber(Math.round(rate * 100 * 100) / 100);
-            } else {
-                baseAmount = 1;
-                displayValue = formatNumber(Math.round(rate * 100) / 100);
-            }
-            
-            rateCurrencyLabel.textContent = `${baseAmount} ${sourceCurrency}`;
-            rateDisplay.textContent = displayValue + ' ' + targetCurrency;
-        }
+        // 도시 선택기 설정
+        const citySel = document.getElementById('countrySelector');
+        if (citySel) citySel.value = currentCountryId;
 
-        // Google Translate 트리거 함수
-        function triggerGoogleTranslate(lang) {
-            let checkCount = 0;
-            const maxChecks = 50;
-            
-            const interval = setInterval(() => {
-                const selectElem = document.querySelector('.goog-te-combo');
-                if (selectElem) {
-                    selectElem.value = lang;
-                    selectElem.dispatchEvent(new Event('change'));
-                    clearInterval(interval);
-                    console.log('Google Translate activated:', lang);
-                } else {
-                    checkCount++;
-                    if (checkCount >= maxChecks) {
-                        clearInterval(interval);
-                        console.log('Google Translate widget not found');
-                    }
-                }
-            }, 100);
-        }
+        // 콘텐츠 렌더링
+        const data = COUNTRIES_DATA[currentCountryId];
+        if (data) { sourceCurrency = data.currency; renderCityContent(data); fetchWeather(data.lat, data.lon, data.city); }
+        renderChecklist();
 
-        // 언어 변경
-        function changeLang(langCode) {
-            console.log('Changing language to:', langCode);
-
-            // 필요한 쿠키만 정리
-            clearCookie('selectedLang');
-            clearCookie('googtrans');
-
-            // 새 쿠키 설정
-            setCookie('selectedLang', langCode, 365);
-            
-            // 한국어가 아니면 googtrans 쿠키 설정
-            if (langCode !== 'ko') {
-                setCookie('googtrans', `/ko/${langCode}`, 365);
-                console.log('Set googtrans to:', `/ko/${langCode}`);
-            } else {
-                console.log('Korean selected - no googtrans needed');
-            }
-            
-            // 페이지 새로고침
-            setTimeout(() => {
-                window.location.reload();
-            }, 200);
-        }
-
-        // 여행지 변경
-        function changeCity(cityId) {
-            // 모든 쿠키 초기화
-            setCookie('googtrans', '', -1);
-            setCookie('selectedLang', '', -1);
-            window.location.href = '/?country=' + cityId;
-        }
-
-        // 환율 계산기 통화 업데이트
-        function updateCalcCurrencies() {
-            const calcSourceCurrency = document.getElementById('calcSourceCurrency');
-            const calcTargetCurrency = document.getElementById('calcTargetCurrency');
-            const calcUnitInfo = document.getElementById('calcUnitInfo');
-            const calcUnitCurrency = document.getElementById('calcUnitCurrency');
-
-            if (calcSourceCurrency) calcSourceCurrency.textContent = sourceCurrency;
-            if (calcTargetCurrency) calcTargetCurrency.textContent = targetCurrency;
-
-            if (calcUnitInfo && calcUnitCurrency) {
-                if (sourceCurrency === 'JPY' || sourceCurrency === 'VND') {
-                    calcUnitInfo.style.display = 'flex';
-                    calcUnitCurrency.textContent = sourceCurrency;
-                } else {
-                    calcUnitInfo.style.display = 'none';
-                }
-            }
-        }
-
-        // 초기화
-        document.addEventListener('DOMContentLoaded', function() {
-            const foreignInput = document.getElementById('foreignInput');
-            if (foreignInput) {
-                foreignInput.addEventListener('input', function(e) {
-                    let value = removeCommas(e.target.value);
-                    if (value && !isNaN(value)) {
-                        e.target.value = formatNumber(value);
-                    }
-                });
-            }
-
-            // 저장된 언어 불러오기
-            const savedLang = getCookie('selectedLang');
-            const googtransCookie = getCookie('googtrans');
-            
-            console.log('Saved lang:', savedLang);
-            console.log('Googtrans cookie:', googtransCookie);
-            
-            // 저장된 언어가 없으면 무조건 한국어로 초기화
-            if (!savedLang) {
-                console.log('No saved language - defaulting to Korean');
-                // googtrans 쿠키가 있다면 삭제 (초기 로드시 한국어가 기본)
-                if (googtransCookie) {
-                    clearCookie('googtrans');
-                    console.log('Cleared existing googtrans cookie');
-                }
-                userSelectedLang = 'ko';
-            } else {
-                // 저장된 언어가 있는 경우에만 해당 언어 사용
-                userSelectedLang = savedLang;
-                
-                // 쿠키 불일치 확인 및 수정
-                if (googtransCookie) {
-                    const expectedGoogtrans = `/ko/${savedLang}`;
-                    if (googtransCookie !== expectedGoogtrans && savedLang !== 'ko') {
-                        console.log('Cookie mismatch detected, clearing googtrans');
-                        // googtrans 쿠키 삭제
-                        clearCookie('googtrans');
-                        // 새로 설정
-                        if (savedLang !== 'ko') {
-                            setCookie('googtrans', expectedGoogtrans, 365);
-                        }
-                    }
-                }
-            }
-
-            // 언어 선택기 설정
-            const langSelector = document.getElementById('langSelector');
-            if (langSelector) {
-                langSelector.value = userSelectedLang;
-            }
-
-            // Google Translate 초기화 (언어가 한국어가 아닌 경우만)
-            if (userSelectedLang !== 'ko') {
-                triggerGoogleTranslate(userSelectedLang);
-            }
-            
-            // 환율 표시 업데이트
-            updateRateDisplay();
-            updateTranslateButtons();
-            updateCalcCurrencies();
-            syncInfoSlideNav();
-            updateAllergyPhrase();
+        // 환율 입력 포맷
+        const fi = document.getElementById('foreignInput');
+        if (fi) fi.addEventListener('input', function(e) {
+            let v = removeCommas(e.target.value);
+            if (v && !isNaN(v)) e.target.value = formatNumber(v);
         });
 
-        function goInfoSlide(index) {
-            const track = document.getElementById('infoSliderTrack');
-            if (!track) return;
-            track.scrollTo({
-                left: track.clientWidth * index,
-                behavior: 'smooth'
-            });
-            setActiveInfoSlideBtn(index);
-        }
-
-        function syncInfoSlideNav() {
-            const track = document.getElementById('infoSliderTrack');
-            if (!track) return;
-            const index = Math.round(track.scrollLeft / Math.max(track.clientWidth, 1));
-            setActiveInfoSlideBtn(index);
-        }
-
-        function setActiveInfoSlideBtn(index) {
-            const buttons = document.querySelectorAll('#infoSliderNav .info-slider-btn');
-            buttons.forEach((btn, idx) => {
-                btn.classList.toggle('active', idx === index);
-            });
-        }
-
-        function getCityLanguage() {
-            return countryLangMap[currentCountryId] || 'en';
-        }
-
-        function buildAllergySentence(lang, itemText) {
-            const templates = {
-                ko: `${itemText} 알레르기가 있어요.`,
-                ja: `${itemText}アレルギーがあります。`,
-                vi: `Tôi bị dị ứng ${itemText}.`,
-                th: `ฉันแพ้${itemText}`,
-                'zh-CN': `我对${itemText}过敏。`,
-                'zh-TW': `我對${itemText}過敏。`,
-                en: `I am allergic to ${itemText}.`
-            };
-            return templates[lang] || templates.en;
-        }
-
-        function updateAllergyPhrase() {
-            const selector = document.getElementById('allergySelector');
-            const koPhrase = document.getElementById('allergyKoPhrase');
-            const localPhrase = document.getElementById('allergyLocalPhrase');
-            if (!selector || !koPhrase || !localPhrase) return;
-
-            const allergyKey = selector.value;
-            const vocab = allergyVocabulary[allergyKey];
-            if (!vocab) return;
-
-            const cityLang = getCityLanguage();
-            const localItem = vocab[cityLang] || vocab.en;
-
-            koPhrase.textContent = buildAllergySentence('ko', vocab.ko);
-            localPhrase.textContent = buildAllergySentence(cityLang, localItem);
-        }
-
-        // 번역 버튼 텍스트 업데이트
-        function updateTranslateButtons() {
-            const langNames = {
-                'ko': '한국어',
-                'ja': '日本語',
-                'vi': 'Tiếng Việt',
-                'th': 'ไทย',
-                'zh-CN': '简体中文',
-                'zh-TW': '繁體中文',
-                'en': 'English'
-            };
-            
-            const targetBtn = document.getElementById('targetLangBtn');
-            const reverseBtn = document.getElementById('reverseBtn');
-            
-            // 선택된 국가의 현지어
-            const cityLang = countryLangMap[currentCountryId] || 'en';
-            
-            // "현지어로" 버튼: 항상 선택된 국가의 언어로 표시
-            if (targetBtn) {
-                targetBtn.textContent = `${langNames[cityLang] || '현지어'}로`;
-            }
-            
-            // 두 번째 버튼: 사용자가 선택한 UI 언어로 표시
-            if (reverseBtn) {
-                reverseBtn.textContent = `${langNames[userSelectedLang] || userSelectedLang}로`;
-            }
-        }
-
-        // 번역 기능
-        function translateAction(mode) {
-            const text = document.getElementById('sourceText').value;
-            if(!text) {
-                alert('번역할 내용을 입력해주세요.');
-                return;
-            }
-            
-            let targetLang;
-            if (mode === 'target') {
-                // 현지어로: 선택된 국가의 언어
-                targetLang = countryLangMap[currentCountryId] || 'en';
-            } else {
-                // 사용자 선택 언어로: 언어 선택기에서 선택한 언어
-                targetLang = userSelectedLang;
-            }
-            
-            fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`)
-            .then(res => res.json()).then(data => {
-                const rb = document.getElementById('transResult');
-                if (data && data[0] && data[0][0][0]) { 
-                    rb.innerText = data[0][0][0]; 
-                    rb.style.display = 'block'; 
-                }
-            }).catch(err => {
-                console.error('Translation error:', err);
-                alert('번역 중 오류가 발생했습니다.');
-            });
-        }
-
-        // 환율 계산
-        function calculateExchange() {
-            const foreignInput = document.getElementById('foreignInput');
-            const krwOutput = document.getElementById('krwOutput');
-            let val = parseFloat(removeCommas(foreignInput.value));
-            
-            if (!val || isNaN(val)) {
-                alert('금액을 입력해주세요.');
-                return;
-            }
-
-            if (sourceCurrency === 'VND' || sourceCurrency === 'JPY') {
-                const rounded = Math.round(val / 100) * 100;
-                if (rounded !== val) {
-                    foreignInput.value = formatNumber(rounded);
-                    val = rounded;
-                    alert(`${sourceCurrency}는 100단위로만 환전 가능합니다.\n${formatNumber(rounded)}으로 조정되었습니다.`);
-                }
-            }
-
-            const resultAmount = Math.round(val * currentDisplayRate);
-            krwOutput.value = formatNumber(resultAmount) + " " + targetCurrency;
-        }
-
-        // 탭 전환
-        function showTab(event, id) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-
-        // 회화 탭 전환
-        function showPhraseTab(event, id) {
-            document.querySelectorAll('.phrase-tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.phrase-tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
+        // i18n 적용
+        applyI18n();
+        updateTranslateButtons();
+        updateAllergyPhrase();
+        updateCalcCurrencies();
+        updateRateDisplay();
+        syncInfoSlideNav();
+    });
     </script>
 </body>
 </html>

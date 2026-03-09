@@ -32,6 +32,7 @@ body {
     font-size: 12px;
 }
 
+/* ── 가운데 날씨/환율 칩 (크기 키움) ── */
 .center-status {
     min-width: 0;
     display: grid;
@@ -40,18 +41,20 @@ body {
 }
 
 .status-chip {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 10px;
-    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 12px;
+    padding: 8px 10px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    gap: 7px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
     min-width: 0;
+    overflow: hidden;
 }
 
 .status-chip i {
-    font-size: 12px;
+    font-size: 15px;   /* 기존 12px → 15px */
+    flex-shrink: 0;
 }
 
 .weather-chip {
@@ -62,8 +65,28 @@ body {
     color: #2998ff;
 }
 
+/* chip-content: 텍스트 줄 정렬용 래퍼 */
+.chip-content {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+/* chip-main: 메인 수치/도시 텍스트 (기존 span 대체) */
+.chip-main {
+    font-size: 14px;   /* 11px → 14px */
+    font-weight: 700;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+/* 기존 .status-chip span 도 호환 유지 */
 .status-chip span {
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 700;
     color: #1a1a1a;
     min-width: 0;
@@ -73,7 +96,7 @@ body {
 }
 
 .status-chip small {
-    font-size: 10px;
+    font-size: 12px;   /* 10px → 12px */
     font-weight: 600;
     color: #666;
     white-space: nowrap;
@@ -552,10 +575,10 @@ body {
 .checklist-item { 
     display: flex;
     align-items: center;
-    padding: 14px;
+    padding: 10px 14px;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     border-radius: 12px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     transition: all 0.3s;
 }
 
@@ -845,35 +868,53 @@ body {
     margin-bottom: 8px;
 }
 
+/* allergy 카드 자체 패딩 축소 */
+.allergy-card.compact-card {
+    padding: 10px 14px;
+}
+
 .allergy-row {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    flex-direction: row;   /* 세로 → 가로 배치 */
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
 }
 
 .allergy-label {
     font-size: 12px;
     font-weight: 700;
     color: #555;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .allergy-selector {
-    margin-bottom: 8px;
+    margin-bottom: 0;      /* 가로 배치 시 하단 마진 제거 */
+    flex: 1;
+    min-height: 36px;      /* 높이 축소 */
+    padding: 6px 28px 6px 10px;
+    font-size: 13px;
 }
 
 .allergy-phrase-box {
     background: #f5f7fa;
     border-radius: 10px;
-    padding: 10px 12px;
+    padding: 8px 12px;     /* 기존 10px → 8px */
+    display: flex;
+    align-items: center;
+    gap: 12px;             /* ko/local 가로로 */
 }
 
 .allergy-ko {
     font-weight: 700;
     color: #1a1a1a;
-    margin-bottom: 6px;
+    margin-bottom: 0;      /* 가로 배치 시 하단 마진 제거 */
+    font-size: 14px;
 }
 
 .allergy-local {
     color: #667eea;
     font-weight: 600;
+    font-size: 13px;
 }

@@ -1,0 +1,141 @@
+{
+  "restaurants": [
+    {
+      "name": "Nhà Hàng Chay Ngọc Chi - Vegetarian Restaurant Michelin guide 2025",
+      "rating": 4.6,
+      "reviews": 1243,
+      "vicinity": "202 Hoàng Diệu, Phước Ninh",
+      "types": [
+        "restaurant",
+        "point_of_interest",
+        "food",
+        "establishment"
+      ]
+    },
+    {
+      "name": "사노우바호텔",
+      "rating": 4.4,
+      "reviews": 2412,
+      "vicinity": "68 Phan Châu Trinh, Hải Châu",
+      "types": [
+        "spa",
+        "gym",
+        "lodging",
+        "restaurant",
+        "health",
+        "point_of_interest",
+        "food",
+        "establishment"
+      ]
+    },
+    {
+      "name": "민 토안 갤럭시 호텔",
+      "rating": 4.2,
+      "reviews": 2294,
+      "vicinity": "306 Đường 2 Tháng 9, Hoà Cường Bắc",
+      "types": [
+        "lodging",
+        "restaurant",
+        "point_of_interest",
+        "food",
+        "establishment"
+      ]
+    },
+    {
+      "name": "Thanh Binh Trade Union Hotel",
+      "rating": 4.1,
+      "reviews": 1097,
+      "vicinity": "2 Ông Ích Khiêm, Thanh Bình",
+      "types": [
+        "travel_agency",
+        "lodging",
+        "restaurant",
+        "point_of_interest",
+        "food",
+        "establishment"
+      ]
+    },
+    {
+      "name": "냣린 다낭 호텔",
+      "rating": 4.1,
+      "reviews": 524,
+      "vicinity": "194 Nguyễn Chí Thanh, Phước Ninh",
+      "types": [
+        "lodging",
+        "restaurant",
+        "point_of_interest",
+        "food",
+        "establishment"
+      ]
+    },
+    {
+      "name": "다스시 2호점",
+      "rating": 4.1,
+      "reviews": 432,
+      "vicinity": "268 Đường Nguyễn Văn Linh, Thạc Gián",
+      "types": [
+        "restaurant",
+        "point_of_interest",
+        "food",
+        "establishment"
+      ]
+    },
+    {
+      "name": "Khách sạn Eden Plaza Đà Nẵng",
+      "rating": 4,
+      "reviews": 1334,
+      "vicinity": "05 - 07 Duy Tân, Hoà Cường Bắc",
+      "types": [
+        "spa",
+        "lodging",
+        "restaurant",
+        "point_of_interest",
+        "food",
+        "establishment"
+      ]
+    },
+    {
+      "name": "쌈디호텔 다낭",
+      "rating": 4,
+      "reviews": 1014,
+      "vicinity": "331 Đường Nguyễn Văn Linh, Thạc Gián",
+      "types": [
+        "spa",
+        "gym",
+        "lodging",
+        "bar",
+        "restaurant",
+        "health",
+        "point_of_interest",
+        "food",
+        "establishment"
+      ]
+    },
+    {
+      "name": "Ẩm Thực Năm Hiền - Bánh Xèo Tôm Nhảy",
+      "rating": 4,
+      "reviews": 956,
+      "vicinity": "46 Phan Thanh, Thạc Gián",
+      "types": [
+        "restaurant",
+        "point_of_interest",
+        "food",
+        "establishment"
+      ]
+    },
+    {
+      "name": "Cơm niêu 3 Cá Bống",
+      "rating": 4,
+      "reviews": 375,
+      "vicinity": "112 Đường Nguyễn Tri Phương, Chính Gián",
+      "types": [
+        "restaurant",
+        "point_of_interest",
+        "food",
+        "establishment"
+      ]
+    }
+  ],
+  "updated_at": "2026-03-12",
+  "city_id": "danang"
+}

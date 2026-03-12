@@ -28,8 +28,9 @@ body {
 .top-selector {
     min-height: 36px;
     height: 36px;
-    padding: 6px 28px 6px 10px;
-    font-size: 12px;
+    padding: 6px 24px 6px 8px;
+    font-size: clamp(10px, 2.5vw, 12px);
+    background-position: right 8px center;
 }
 
 /* ── 가운데 날씨/환율 칩 (크기 키움) ── */
@@ -75,7 +76,7 @@ body {
 
 /* chip-main: 메인 수치/도시 텍스트 (기존 span 대체) */
 .chip-main {
-    font-size: 14px;   /* 11px → 14px */
+    font-size: clamp(11px, 3vw, 14px);
     font-weight: 700;
     color: #1a1a1a;
     white-space: nowrap;
@@ -125,8 +126,8 @@ body {
     display: flex; 
     background: white;
     position: sticky; 
-    top: 0; 
-    z-index: 1000; 
+    top: 45px;
+    z-index: 998; 
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
@@ -210,14 +211,15 @@ body {
 
 .trans-input-compact {
     width: 100%;
-    min-height: 80px;
+    height: 90px;
+    min-height: unset;
     border: 2px solid #e5e5ea;
     border-radius: 10px;
     padding: 12px;
     font-size: 14px;
     margin-bottom: 10px;
     box-sizing: border-box;
-    resize: vertical;
+    resize: none;
 }
 
 .trans-input:focus,
@@ -392,41 +394,104 @@ body {
 
 /* Shopping Grid */
 .shopping-grid { 
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 12px; 
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.shop-category-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.shop-category-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #667eea;
+    padding: 4px 10px;
+    background: #f0f2ff;
+    border-radius: 8px;
+    display: inline-block;
+    align-self: flex-start;
+}
+
+.shop-category-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
 }
 
 .shop-item { 
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    border: none;
-    padding: 20px 12px;
-    border-radius: 16px; 
-    text-align: center; 
+    background: #fff;
+    border: 1.5px solid #eef0f7;
+    padding: 12px 10px;
+    border-radius: 14px; 
     text-decoration: none; 
     color: #1a1a1a;
-    font-weight: 600;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 100px;
-    transition: all 0.3s;
+    gap: 10px;
+    min-height: 64px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .shop-item:active {
     transform: scale(0.97);
+    background: #f5f7ff;
 }
 
-.shop-item i { 
+.shop-emoji {
+    font-size: 28px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.shop-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.shop-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.3;
+    word-break: keep-all;
+}
+
+.shop-meta {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.shop-price {
+    font-size: 12px;
+    font-weight: 700;
     color: #667eea;
-    font-size: 24px;
 }
 
-.shop-item span {
-    font-size: 13px;
-    line-height: 1.4;
+.shop-tag {
+    font-size: 10px;
+    color: #888;
+    background: #f0f2f8;
+    padding: 1px 6px;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+
+.shop-note {
+    font-size: 10px;
+    color: #e67e22;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-top: 1px;
 }
 
 /* Phrase Cards */
@@ -473,32 +538,32 @@ body {
 /* Exchange Rate Calculator */
 .calc-box-improved { 
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    padding: 20px;
-    border-radius: 16px;
+    padding: 12px;
+    border-radius: 14px;
 }
 
 .calc-row { 
     display: flex; 
     align-items: center; 
     background: white;
-    padding: 16px;
-    border-radius: 12px; 
-    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 10px; 
+    margin-bottom: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .currency-label { 
-    width: 70px;
+    width: 56px;
     font-weight: 700;
     color: #667eea;
-    font-size: 18px;
+    font-size: 15px;
 }
 
 .calc-input, 
 .calc-output { 
     border: none;
     width: 100%;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
     outline: none;
     text-align: right;
@@ -511,21 +576,21 @@ body {
 
 .calc-arrow { 
     text-align: center;
-    margin: 8px 0;
+    margin: 4px 0;
     color: #667eea;
-    font-size: 20px;
+    font-size: 16px;
 }
 
 .calc-btn {
     width: 100%;
-    padding: 16px;
+    padding: 11px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    border-radius: 12px;
-    font-size: 16px;
+    border-radius: 10px;
+    font-size: 14px;
     font-weight: 700;
-    margin-top: 12px;
+    margin-top: 8px;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     display: flex;
@@ -541,20 +606,20 @@ body {
 
 .calc-unit-info { 
     background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-    border-left: 4px solid #ffc107;
-    padding: 12px;
+    border-left: 3px solid #ffc107;
+    padding: 8px 10px;
     border-radius: 8px;
-    margin-top: 12px;
-    font-size: 13px;
+    margin-top: 8px;
+    font-size: 12px;
     color: #856404;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .calc-unit-info i {
     color: #ffc107;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .calc-unit-info strong { 
@@ -800,6 +865,87 @@ body {
     }
 }
 
+/* 소형 모바일 (360px 이하) */
+@media (max-width: 360px) {
+    .app-header {
+        padding: 8px 6px;
+    }
+
+    .top-inline-row {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
+        gap: 4px;
+    }
+
+    .top-selector {
+        font-size: 10px;
+        padding: 4px 20px 4px 6px;
+        background-position: right 6px center;
+    }
+
+    .chip-main {
+        font-size: 10px;
+    }
+
+    .status-chip small {
+        font-size: 9px;
+    }
+
+    .status-chip {
+        padding: 5px 6px;
+        gap: 4px;
+    }
+
+    .status-chip i {
+        font-size: 12px;
+    }
+
+    .tab-btn {
+        font-size: 9px;
+        padding: 10px 0;
+    }
+
+    .tab-btn i {
+        font-size: 15px;
+    }
+
+    .allergy-phrase-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .tip-warning-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 중간 모바일 최적화 (361~480px) */
+@media (min-width: 361px) and (max-width: 480px) {
+    .chip-main {
+        font-size: 12px;
+    }
+
+    .status-chip small {
+        font-size: 10px;
+    }
+
+    .top-selector {
+        font-size: 11px;
+    }
+}
+
+/* 대형 모바일 / 태블릿 (481px~) */
+@media (min-width: 481px) {
+    .content-area {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .app-header {
+        padding: 12px 16px;
+    }
+}
+
 /* Info slider (tips/warnings <-> apps) */
 .info-slider {
     margin: 0 12px 12px;
@@ -918,3 +1064,1033 @@ body {
     font-weight: 600;
     font-size: 13px;
 }
+/* ============================================================ */
+/* 긴급 연락처 */
+/* ============================================================ */
+.emergency-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.emergency-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f8f9ff;
+    border: 1px solid #e8eaf6;
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.emergency-item:active { background: #e8eaf6; transform: scale(0.98); }
+
+.emergency-icon {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.emergency-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.emergency-label {
+    font-size: 13px;
+    color: #555;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.emergency-label small {
+    font-size: 11px;
+    color: #888;
+    font-weight: 400;
+}
+
+.emergency-number {
+    font-size: 20px;
+    font-weight: 800;
+    color: #1a1a1a;
+    letter-spacing: 1px;
+}
+
+.emergency-call {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: #22c55e;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.emergency-tip {
+    font-size: 11px;
+    color: #888;
+    margin: 4px 0 0;
+    text-align: center;
+}
+
+/* ============================================================ */
+/* 날씨 상세 */
+/* ============================================================ */
+.weather-detail-box {
+    padding: 8px 0 4px;
+}
+
+.weather-main-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.weather-icon-big {
+    font-size: 52px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.weather-info-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.weather-city-name {
+    font-size: 14px;
+    color: #888;
+    font-weight: 500;
+}
+
+.weather-temp-big {
+    font-size: 36px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1;
+}
+
+.weather-desc-big {
+    font-size: 15px;
+    color: #667eea;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.weather-sub-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.weather-sub-item {
+    background: #f5f7fa;
+    border-radius: 10px;
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+}
+
+.weather-sub-item span {
+    font-size: 11px;
+    color: #888;
+}
+
+.weather-sub-item strong {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+/* ============================================================ */
+/* 팁 계산기 */
+/* ============================================================ */
+.tip-pct-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.tip-pct-btn {
+    padding: 10px 0;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    background: white;
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.tip-pct-btn.active {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.tip-result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.tip-result-item {
+    background: #f5f7fa;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tip-result-item span {
+    font-size: 12px;
+    color: #888;
+}
+
+.tip-result-item strong {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.tip-split-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f5f7fa;
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+
+.tip-split-row span {
+    font-size: 13px;
+    color: #555;
+    font-weight: 600;
+    flex: 1;
+}
+
+.tip-split-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tip-split-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+}
+
+.tip-split-btn:active { background: #667eea; color: white; }
+
+#tipSplitCount {
+    font-size: 18px;
+    font-weight: 700;
+    min-width: 24px;
+    text-align: center;
+}
+
+.tip-split-row > strong {
+    font-size: 15px;
+    font-weight: 700;
+    color: #667eea;
+    min-width: 80px;
+    text-align: right;
+}
+/* ============================================================
+   월별 기후 카드
+   ============================================================ */
+.month-selector {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 4px 0 10px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.month-selector::-webkit-scrollbar { display: none; }
+
+.month-btn {
+    flex: 0 0 auto;
+    padding: 7px 11px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 999px;
+    background: white;
+    color: #888;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.month-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.35);
+}
+
+.month-detail-box {
+    margin-top: 4px;
+}
+
+.climate-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.climate-season-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    align-self: flex-start;
+}
+
+.climate-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.climate-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f7f8ff;
+    border-radius: 12px;
+    padding: 11px 14px;
+}
+
+.climate-stat-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+.climate-stat-label {
+    font-size: 13px;
+    color: #888;
+    flex: 1;
+}
+
+.climate-stat-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    text-align: right;
+}
+
+.outfit-item .climate-stat-value {
+    font-size: 13px;
+    max-width: 60%;
+    text-align: right;
+    line-height: 1.3;
+}
+
+/* 기온 바 */
+.climate-temp-bar {
+    margin-top: 2px;
+}
+
+.temp-bar-track {
+    position: relative;
+    height: 10px;
+    background: #eef0f8;
+    border-radius: 999px;
+    margin: 20px 4px 8px;
+}
+
+.temp-bar-fill {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 999px;
+    transition: all 0.4s ease;
+}
+
+.temp-bar-min, .temp-bar-max {
+    position: absolute;
+    top: -18px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #666;
+}
+.temp-bar-min { left: 0; transform: translateX(-50%); }
+.temp-bar-max { right: 0; transform: translateX(50%); }
+
+/* ============================================================
+   번역기/환율계산기 통합 탭
+   ============================================================ */
+.tool-card-header {
+    margin-bottom: 14px;
+}
+
+.tool-tab-btns {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid #f0f0f8;
+    padding-bottom: 0;
+}
+
+.tool-tab-btn {
+    flex: 1;
+    padding: 8px 6px 10px;
+    border: none;
+    background: none;
+    color: #aaa;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+}
+
+.tool-tab-btn.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+}
+
+.tool-tab-btn i {
+    font-size: 14px;
+}
+
+/* ============================================================
+   출발 전 / 여행 중 모드 스위치
+   ============================================================ */
+.mode-switch-bar {
+    display: flex;
+    background: white;
+    border-bottom: 1px solid #eee;
+    padding: 6px 16px;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1.5px solid #e0e0f0;
+    border-radius: 999px;
+    background: white;
+    color: #aaa;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.mode-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 2px 10px rgba(102,126,234,0.35);
+}
+
+.mode-btn i { font-size: 13px; }
+
+/* 잠금 안내 카드 */
+.mode-locked-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100px;
+}
+
+.mode-locked-msg {
+    text-align: center;
+    color: #bbb;
+    padding: 20px;
+}
+
+.mode-locked-msg i {
+    font-size: 28px;
+    margin-bottom: 10px;
+    display: block;
+    color: #667eea;
+    opacity: 0.4;
+}
+
+.mode-locked-msg p {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* ── 환율탭 번역기/환율 전환 탭 버튼 ── */
+.calc-tool-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 12px 0;
+    background: #f0f2f8;
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.calc-tool-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: #888;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.calc-tool-tab-btn.active {
+    background: #fff;
+    color: #667eea;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.15);
+}
+
+.calc-tool-tab-btn i {
+    font-size: 14px;
+}
+/* ============================================================
+   Gemini AI 일정 플래너
+   ============================================================ */
+.planner-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 8px;
+}
+
+.planner-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.planner-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.planner-input {
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.planner-input:focus {
+    border-color: #667eea;
+}
+
+.planner-stepper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.planner-stepper button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid #667eea;
+    background: #fff;
+    color: #667eea;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.planner-stepper span#plannerDayCount {
+    font-size: 18px;
+    font-weight: 700;
+    min-width: 24px;
+    text-align: center;
+}
+
+.planner-unit {
+    font-size: 13px;
+    color: #888;
+}
+
+.planner-pace-btns {
+    display: flex;
+    gap: 10px;
+}
+
+.pace-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1.5px solid #ddd;
+    background: #f7f7f7;
+    color: #888;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.pace-btn.active {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #667eea22, #764ba222);
+    color: #667eea;
+}
+
+.planner-generate-btn {
+    margin-top: 4px;
+    padding: 13px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(102,126,234,0.35);
+    transition: opacity 0.2s;
+}
+
+.planner-generate-btn:active { opacity: 0.85; }
+
+.planner-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 0;
+    gap: 14px;
+    color: #667eea;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.planner-loading-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e0e0e0;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.planner-error {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #fff0f0;
+    color: #d44;
+    font-size: 13px;
+    border: 1px solid #fcc;
+}
+
+.planner-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 12px 0 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #333;
+}
+
+.planner-reset-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1.5px solid #667eea;
+    background: #fff;
+    color: #667eea;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* 일정 카드 */
+.plan-day {
+    margin-bottom: 16px;
+}
+
+.plan-day-header {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    padding: 6px 14px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: inline-block;
+}
+
+.plan-schedules {
+    display: flex;
+    flex-direction: column;
+    padding-left: 8px;
+    border-left: 2px solid #e8e8f5;
+    margin-left: 6px;
+}
+
+.plan-item {
+    display: flex;
+    gap: 10px;
+    padding: 6px 0;
+    position: relative;
+}
+
+.plan-time {
+    font-size: 12px;
+    color: #888;
+    min-width: 42px;
+    padding-top: 2px;
+    font-variant-numeric: tabular-nums;
+}
+
+.plan-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #667eea;
+    margin-top: 5px;
+    flex-shrink: 0;
+    position: relative;
+    left: -5px;
+}
+
+.plan-info {
+    flex: 1;
+}
+
+.plan-place {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.plan-desc {
+    font-size: 12px;
+    color: #777;
+    margin-top: 2px;
+    line-height: 1.4;
+}
+
+/* ── 결과 헤더 ── */
+.planner-result-header {
+    margin-bottom: 10px;
+}
+.result-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+#plannerResultTitle {
+    font-size: .93rem;
+    font-weight: 700;
+    color: #333;
+    flex: 1;
+    line-height: 1.3;
+}
+.planner-reset-btn {
+    flex-shrink: 0;
+    background: #f5f3ff;
+    border: 1.5px solid #d0c8f8;
+    color: #7c5cfc;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: .76rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s;
+}
+.planner-reset-btn:hover { background: #ede9ff; }
+
+/* ── 액션 버튼 ── */
+.planner-action-btns {
+    display: flex;
+    gap: 6px;
+}
+.plan-action-btn {
+    flex: 1;
+    padding: 7px 4px;
+    border: none;
+    border-radius: 10px;
+    font-size: .76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+.btn-budget { background: #e8fff2; color: #1a9c5b; }
+.btn-pdf    { background: #fff0f0; color: #d94040; }
+.btn-kakao  { background: #fff9e0; color: #b5760a; }
+.plan-action-btn:hover { filter: brightness(.92); }
+
+/* ── 날씨 배지 ── */
+.weather-badge {
+    background: linear-gradient(90deg, #f0f7ff, #f0fbf5);
+    border: 1px solid #d0e8f8;
+    border-radius: 10px;
+    padding: 7px 12px;
+    font-size: .81rem;
+    margin-bottom: 10px;
+    color: #2060aa;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ── 날짜 탭 ── */
+.plan-day-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 0 10px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.plan-day-tabs::-webkit-scrollbar { display: none; }
+.plan-day-tab {
+    flex-shrink: 0;
+    padding: 6px 16px;
+    border: 1.5px solid #d0c8f8;
+    border-radius: 20px;
+    background: #fff;
+    color: #7c5cfc;
+    font-size: .8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+}
+.plan-day-tab.active {
+    background: #7c5cfc;
+    color: #fff;
+    border-color: #7c5cfc;
+    box-shadow: 0 2px 8px rgba(124,92,252,.25);
+}
+.plan-day-tab:hover:not(.active) { background: #f0ecff; }
+
+/* ── 날짜 패널 (핵심) ── */
+.plan-day-panel {
+    display: none !important;
+}
+.plan-day-panel.active {
+    display: block !important;
+    animation: fadeInPanel .18s ease;
+}
+@keyframes fadeInPanel {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 일정 아이템 개선 ── */
+.plan-schedules { padding: 0; }
+.plan-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 4px;
+    border-bottom: 1px solid #f2f0fb;
+}
+.plan-item:last-child { border-bottom: none; }
+.plan-item-mappable {
+    cursor: pointer;
+    border-radius: 10px;
+    padding: 10px 8px;
+    margin: 0 -4px;
+    transition: background .12s;
+}
+.plan-item-mappable:hover  { background: #f5f2ff; }
+.plan-item-mappable:active { background: #ede9ff; }
+.plan-time {
+    min-width: 40px;
+    font-size: .76rem;
+    color: #aaa;
+    padding-top: 3px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.3px;
+}
+.map-pin-badge { font-size: .62rem; color: #b0a0e8; margin-left: 2px; }
+.plan-map-arrow {
+    color: #d8d0f8;
+    font-size: .68rem;
+    padding-top: 4px;
+    flex-shrink: 0;
+    align-self: center;
+}
+
+/* ── 예산 계산기 (날씨·환율 탭) ── */
+#budgetCard .tool-card-header {
+    margin-bottom: 12px;
+}
+.budget-panel,
+#budgetCard {
+    background: #f8fff8;
+    border: 1px solid #c8ecd6;
+    border-radius: 14px;
+    padding: 16px;
+    margin: 10px 0;
+}
+#calcPanelBudget .card {
+    margin-top: 0;
+}
+.budget-title {
+    font-weight: 700;
+    font-size: .92rem;
+    margin-bottom: 12px;
+    color: #1a9c5b;
+}
+.budget-rows { display: flex; flex-direction: column; gap: 8px; }
+.budget-row  { display: flex; align-items: center; gap: 8px; }
+.budget-row span:first-child { min-width: 56px; font-size: .88rem; }
+.budget-row input {
+    flex: 1;
+    border: 1px solid #cde8d4;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: .9rem;
+    outline: none;
+    background: #fff;
+}
+.budget-row input:focus { border-color: #7c5cfc; }
+.budget-unit  { min-width: 36px; font-size: .78rem; color: #888; }
+.budget-total {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #fff;
+    border-radius: 10px;
+    font-size: .92rem;
+    text-align: right;
+    border: 1px solid #c8ecd6;
+    color: #333;
+}
+
+/* ── 일정 플래너 예산 선택 ── */
+.planner-budget-wrap { display: flex; flex-direction: column; flex: 1; gap: 0; }
+.planner-budget-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+.budget-preset-btn {
+    flex: 1;
+    min-width: 56px;
+    padding: 6px 4px;
+    border: 1.5px solid #d0c8f8;
+    border-radius: 10px;
+    background: #fff;
+    color: #7c5cfc;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+}
+.budget-preset-btn.active {
+    background: #7c5cfc;
+    color: #fff;
+    border-color: #7c5cfc;
+}
+.budget-preset-btn:hover:not(.active) { background: #f0ecff; }
+
+/* ── 출발전 탭 (환율 계산기 | 예산 계산기) ── */
+.before-calc-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #ede9fe;
+    padding-bottom: 0;
+}
+.before-calc-tab {
+    flex: 1;
+    padding: 9px 8px 10px;
+    border: none;
+    background: none;
+    color: #888;
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all .15s;
+    border-radius: 0;
+}
+.before-calc-tab.active {
+    color: #7c5cfc;
+    border-bottom-color: #7c5cfc;
+}
+.before-calc-tab:hover:not(.active) { color: #555; }

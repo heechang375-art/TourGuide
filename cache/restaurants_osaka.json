@@ -1,0 +1,184 @@
+{
+  "restaurants": [
+    {
+      "name": "라・페트 히라마츠",
+      "rating": 4.4,
+      "reviews": 562,
+      "vicinity": "FESTIVAL TOWER, 37F, 2-chōme-3−１８ Nakanoshima, Osaka, Kita Ward",
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "Noguchi Taro",
+      "rating": 4.4,
+      "reviews": 138,
+      "vicinity": "3階, 1-chōme-3−１ Sonezakishinchi, OsakaKita Ward",
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "The Ritz-Carlton Gourmet Shop",
+      "rating": 4.4,
+      "reviews": 135,
+      "vicinity": "2-chōme-5-25 Umeda, Kita Ward, Osaka",
+      "types": [
+        "restaurant",
+        "store",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "은페이 기타신치점",
+      "rating": 4.2,
+      "reviews": 882,
+      "vicinity": "はつ根ビル 1F, 1-chōme-5−４ Dōjima, OsakaKita Ward",
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "Gen-Mi-An Nishiumeda",
+      "rating": 4.2,
+      "reviews": 375,
+      "vicinity": "１Ｆ, 1-chōme-3−１ Umeda, OsakaKita Ward",
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "Piano Piano",
+      "rating": 4.2,
+      "reviews": 234,
+      "vicinity": "肥後橋プラザビル, 1F, 1-chōme-4−２２ Kyōmachibori, OsakaNishi Ward",
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "스시 사카우",
+      "rating": 4.2,
+      "reviews": 222,
+      "vicinity": "1-chōme-2-33 Dōjima, Kita Ward, Osaka",
+      "types": [
+        "restaurant",
+        "store",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "Szechwan Cuisine & Wine Restaurant \"YIFU\" at Osaka Nakanoshima",
+      "rating": 4.2,
+      "reviews": 114,
+      "vicinity": "3-chōme-3-23 Nakanoshima, Kita Ward, Osaka",
+      "types": [
+        "meal_takeaway",
+        "cafe",
+        "bar",
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "Royal Horse",
+      "rating": 4.1,
+      "reviews": 405,
+      "vicinity": "ビルマビル北浜 11F, 1-chōme-1−２８ Kitahama, OsakaChuo Ward",
+      "types": [
+        "night_club",
+        "bar",
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "호텔 몬토레 오사카",
+      "rating": 4,
+      "reviews": 2778,
+      "vicinity": "3-chōme-3-45 Umeda, Kita Ward, Osaka",
+      "types": [
+        "restaurant",
+        "food",
+        "lodging",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "XEX WEST Salvatore Cuomo Bros.／The BAR",
+      "rating": 4,
+      "reviews": 1080,
+      "vicinity": "ハービスエント 7F, 2-chōme-2−２２ Umeda, OsakaKita Ward",
+      "types": [
+        "cafe",
+        "bar",
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "키소지 키타신치점",
+      "rating": 4,
+      "reviews": 369,
+      "vicinity": "ぐらん･ぱれ 2 3F, 1-chōme-3−２６ 曽根崎新地, OsakaKita Ward",
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "Rokkon Osaka kitashinchiten",
+      "rating": 4,
+      "reviews": 337,
+      "vicinity": "1-chōme-1-15 Sonezakishinchi, Kita Ward, Osaka",
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "야키니쿠 돈돈 기타신치점",
+      "rating": 4,
+      "reviews": 185,
+      "vicinity": "曽根崎新地1-11-24 プライドビル 1F, Osaka, Kita Ward",
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    }
+  ],
+  "updated_at": "2026-03-12",
+  "city_id": "osaka"
+}

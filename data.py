@@ -366,7 +366,7 @@ COUNTRIES = {
             {"name": "Grab", "desc": "동남아 필수 택시 호출", "link": "https://play.google.com/store/apps/details?id=com.grabtaxi.passenger"},
             {"name": "구글맵", "desc": "지도 및 길찾기", "link": "https://play.google.com/store/apps/details?id=com.google.android.apps.maps"}
         ],
-        "tips": ["루프탑 바 야경", "벤탄시장 흥정 필수", "Metro Line 1(벤탄-수오이띠엔) 운행 중", "비자 필요 시 공식 e-visa 포털 사용"],
+        "tips": ["루프탑 바 야경", "벤탄시장 흥정 필수", "Metro Line 1(벤탄-수오이띠엔) 운행 중 · 일 5만명 이용 · 벤탄 시장 접근 편리", "비자 필요 시 공식 e-visa 포털 사용"],
         "warnings": ["오토바이 날치기 주의", "길 건널 때 천천히", "비자는 정부 공식 포털 사용"],
         "phrases": COMMON_PHRASES["vietnam"],
         "shopping": ["마루 초콜릿", "콩카페 원두", "캐슈넛", "비나밋 건과일"]
@@ -413,7 +413,7 @@ COUNTRIES = {
             {"name": "Yelp", "desc": "현지인 맛집 리뷰", "link": "https://play.google.com/store/apps/details?id=com.yelp.android"},
             {"name": "Google Maps", "desc": "지도 및 길찾기", "link": "https://play.google.com/store/apps/details?id=com.google.android.apps.maps"}
         ],
-        "tips": ["팁 18~20% 기준", "지하철/버스 OMNY 결제", "OMNY는 7일 내 12회 이후 무료(주간 상한)", "맨해튼 60번가 이남 혼잡통행료"],
+        "tips": ["팁 18~20% 기준", "지하철/버스 OMNY 결제 (MetroCard 판매 종료)", "OMNY 7일 내 12회 초과 시 무료(주간상한 $35)", "맨해튼 60번가 이남 혼잡통행료"],
         "warnings": ["밤늦은 공원 방문 자제", "길거리 구걸 대응 자제", "OMNY 상한 혜택은 같은 카드/기기 연속 사용 필요"],
         "phrases": COMMON_PHRASES["usa"],
         "shopping": ["트레이더조 에코백", "글로시에 화장품", "나이키 한정판", "바스앤바디웍스"]

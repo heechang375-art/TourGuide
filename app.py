@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from flask import Flask, render_template, request, jsonify, Response
 from dotenv import load_dotenv
 from data import COUNTRIES, CHECKLIST_DATA
-from utils import get_travel_info, translate_weather
+from utils import get_travel_info, get_rates, get_weather, _kst_label
 
 load_dotenv()
 
@@ -233,17 +233,38 @@ def api_spas(city_id):
 
 @app.route('/api/weather/<city_name>')
 def api_weather(city_name):
+    data = get_weather(city_name)
+    label = _kst_label(data['fetched_at'])
+    return jsonify({
+        'temp': data.get('temp', '-'),
+        'desc': data.get('desc', '오류'),
+        'feels_like': data.get('feels_like', '-'),
+        'humidity': data.get('humidity', '-'),
+        'wind': data.get('wind', '-'),
+        'time_label': label,
+        'cached': data.get('cached', False),
+    })
+
+
+@app.route('/api/rates/<currency>')
+def api_rates(currency):
+    import datetime
+    from email.utils import parsedate_to_datetime
+    data = get_rates(currency.upper())
+    fetched_label = _kst_label(data['fetched_at'])
+    src = data.get('source_updated_at', '')
     try:
-        W_KEY = os.getenv("WEATHER_API_KEY")
-        w_url = f"https://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={W_KEY}&units=metric"
-        w_data = requests.get(w_url, timeout=5).json()
-        if w_data.get('main'):
-            temp = round(w_data['main']['temp'])
-            desc = translate_weather(w_data['weather'][0]['main'])
-            return jsonify({'temp': temp, 'desc': desc})
-    except Exception as e:
-        print(f"Weather API error: {e}")
-    return jsonify({'temp': '-', 'desc': '오류'})
+        src_kst = parsedate_to_datetime(src).astimezone(
+            datetime.timezone(datetime.timedelta(hours=9))
+        )
+        source_label = src_kst.strftime("KST %m/%d %H:%M 기준")
+    except Exception:
+        source_label = fetched_label
+    return jsonify({
+        'rates': data.get('rates', {}),
+        'time_label': source_label,
+        'cached': data.get('cached', False),
+    })
 
 
 @app.route('/data.js')
@@ -251,7 +272,8 @@ def serve_data_js():
     js_path = os.path.join(app.static_folder, 'data.js')
     with open(js_path, 'r', encoding='utf-8') as f:
         js_content = f.read()
-    return Response(js_content, mimetype='application/javascript')
+    return Response(js_content, mimetype='application/javascript',
+                    headers={'Cache-Control': 'public, max-age=86400'})
 
 
 if __name__ == '__main__':

@@ -2,277 +2,238 @@ import os
 import json
 import time
 import requests
-from datetime import datetime, timezone
-from flask import Flask, render_template, request, jsonify, Response
+from datetime import datetime, timezone, timedelta
+from email.utils import parsedate_to_datetime
+
+from flask import Flask, render_template, request, jsonify, Response, abort
 from dotenv import load_dotenv
-from data import COUNTRIES, CHECKLIST_DATA
+
+from data import COUNTRIES
 from utils import get_travel_info, get_rates, get_weather, _kst_label
 
 load_dotenv()
 
 app = Flask(__name__)
 
-# 도시별 좌표 (data.js 기준)
+# 도시별 좌표 (static/data.js와 동일하게 유지)
 CITY_COORDS = {
-    'tokyo':     {'lat': 35.6762, 'lon': 139.6503, 'city': 'Tokyo'},
-    'osaka':     {'lat': 34.6937, 'lon': 135.5023, 'city': 'Osaka'},
-    'fukuoka':   {'lat': 33.5904, 'lon': 130.4017, 'city': 'Fukuoka'},
-    'danang':    {'lat': 16.0544, 'lon': 108.2022, 'city': 'Da Nang'},
-    'hochiminh': {'lat': 10.8231, 'lon': 106.6297, 'city': 'Ho Chi Minh City'},
-    'bangkok':   {'lat': 13.7563, 'lon': 100.5018, 'city': 'Bangkok'},
-    'taipei':    {'lat': 25.0330, 'lon': 121.5654, 'city': 'Taipei'},
-    'hongkong':  {'lat': 22.3193, 'lon': 114.1694, 'city': 'Hong Kong'},
-    'nyc':       {'lat': 40.7128, 'lon': -74.0060, 'city': 'New York'},
-    'seoul':     {'lat': 37.5665, 'lon': 126.9780, 'city': 'Seoul'},
+    'tokyo':     {'lat': 35.6762, 'lon': 139.6503},
+    'osaka':     {'lat': 34.6937, 'lon': 135.5023},
+    'fukuoka':   {'lat': 33.5904, 'lon': 130.4017},
+    'danang':    {'lat': 16.0544, 'lon': 108.2022},
+    'hochiminh': {'lat': 10.8231, 'lon': 106.6297},
+    'bangkok':   {'lat': 13.7563, 'lon': 100.5018},
+    'taipei':    {'lat': 25.0330, 'lon': 121.5654},
+    'hongkong':  {'lat': 22.3193, 'lon': 114.1694},
+    'nyc':       {'lat': 40.7128, 'lon': -74.0060},
+    'seoul':     {'lat': 37.5665, 'lon': 126.9780},
 }
 
-# 레스토랑 캐시 파일 경로
 CACHE_DIR = os.path.join(os.path.dirname(__file__), 'cache')
 os.makedirs(CACHE_DIR, exist_ok=True)
 CACHE_TTL = 7 * 24 * 3600  # 7일
 
-
-def get_restaurant_cache_path(city_id):
-    return os.path.join(CACHE_DIR, f'restaurants_{city_id}.json')
+PLACES_URL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
 
 
-def is_cache_valid(path):
-    """캐시 파일이 존재하고 7일 이내인지 확인"""
+# ── 캐시 헬퍼 ─────────────────────────────────────────────
+def _cache_path(kind, city_id):
+    return os.path.join(CACHE_DIR, f'{kind}_{city_id}.json')
+
+
+def _cache_age_days(path):
     if not os.path.exists(path):
-        return False
-    age = time.time() - os.path.getmtime(path)
-    return age < CACHE_TTL
+        return None
+    return round((time.time() - os.path.getmtime(path)) / 86400, 1)
 
 
-def fetch_restaurants_from_places(lat, lon, city_name):
-    """Google Places API로 평점 4.0+ 식당 조회"""
-    PLACES_KEY = os.getenv('PLACES_API_KEY', '')
-    if not PLACES_KEY or PLACES_KEY == 'your_google_places_api_key_here':
+def _read_cache(path):
+    """캐시가 7일 이내면 dict 반환, 아니면 None."""
+    if not os.path.exists(path):
+        return None
+    if time.time() - os.path.getmtime(path) >= CACHE_TTL:
+        return None
+    with open(path, encoding='utf-8') as f:
+        return json.load(f)
+
+
+def _write_cache(path, payload):
+    payload['updated_at'] = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    return payload
+
+
+# ── Google Places ────────────────────────────────────────
+def _places_key():
+    key = os.getenv('PLACES_API_KEY', '')
+    if not key or key == 'your_google_places_api_key_here':
+        return None
+    return key
+
+
+def _fetch_places(lat, lon, place_type, radius, min_rating, min_reviews, limit):
+    """Places nearbysearch 공통 호출. 실패 시 빈 리스트."""
+    key = _places_key()
+    if not key:
+        return []
+    try:
+        resp = requests.get(PLACES_URL, params={
+            'location': f'{lat},{lon}',
+            'radius': radius,
+            'type': place_type,
+            'key': key,
+            'language': 'ko',
+            'rankby': 'prominence',
+        }, timeout=10).json()
+    except Exception as e:
+        print(f"Places API error ({place_type}): {e}")
         return []
 
     results = []
-    # 아침/점심/저녁 카테고리별 키워드
-    keywords = ['브런치 카페', '현지 맛집 점심', '저녁 레스토랑']
-
-    try:
-        url = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
-        params = {
-            'location': f'{lat},{lon}',
-            'radius': 3000,
-            'type': 'restaurant',
-            'key': PLACES_KEY,
-            'language': 'ko',
-            'rankby': 'prominence',
-        }
-        resp = requests.get(url, params=params, timeout=10).json()
-        places = resp.get('results', [])
-
-        for p in places:
-            rating = p.get('rating', 0)
-            reviews = p.get('user_ratings_total', 0)
-            if rating >= 4.0 and reviews >= 100:
-                results.append({
-                    'name': p.get('name', ''),
-                    'rating': rating,
-                    'reviews': reviews,
-                    'vicinity': p.get('vicinity', ''),
-                    'types': p.get('types', []),
-                })
-
-        # 평점 높은 순 정렬, 상위 20개
-        results.sort(key=lambda x: (x['rating'], x['reviews']), reverse=True)
-        results = results[:20]
-
-    except Exception as e:
-        print(f"Places API error: {e}")
-
-    return results
+    for p in resp.get('results', []):
+        rating = p.get('rating', 0)
+        reviews = p.get('user_ratings_total', 0)
+        if rating < min_rating or reviews < min_reviews:
+            continue
+        results.append({
+            'name': p.get('name', ''),
+            'rating': rating,
+            'reviews': reviews,
+            'vicinity': p.get('vicinity', ''),
+            'price_level': p.get('price_level', 2),
+        })
+    results.sort(key=lambda x: (x['rating'], x['reviews']), reverse=True)
+    return results[:limit]
 
 
-def get_restaurants(city_id):
-    """캐시 확인 후 없으면 Places API 호출"""
-    cache_path = get_restaurant_cache_path(city_id)
+def get_places(city_id, kind):
+    """kind: 'restaurants' | 'spas'. 캐시 우선, 없으면 API 호출 후 저장."""
+    path = _cache_path(kind, city_id)
+    cached = _read_cache(path)
+    if cached is not None:
+        return cached.get('items', []), cached.get('updated_at', '')
 
-    if is_cache_valid(cache_path):
-        with open(cache_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return data.get('restaurants', []), data.get('updated_at', '')
-
-    # 캐시 만료 or 없음 → API 호출
-    city_data = CITY_COORDS.get(city_id)
-    if not city_data:
+    coords = CITY_COORDS.get(city_id)
+    if not coords:
         return [], ''
 
-    restaurants = fetch_restaurants_from_places(
-        city_data['lat'], city_data['lon'], city_data['city']
-    )
+    if kind == 'restaurants':
+        items = _fetch_places(coords['lat'], coords['lon'], 'restaurant',
+                              radius=3000, min_rating=4.0, min_reviews=100, limit=20)
+    else:  # spas
+        items = _fetch_places(coords['lat'], coords['lon'], 'spa',
+                              radius=5000, min_rating=4.2, min_reviews=50, limit=10)
+        items = [s for s in items if s['price_level'] <= 3]
 
-    # 캐시 저장
-    updated_at = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-    cache_data = {'restaurants': restaurants, 'updated_at': updated_at, 'city_id': city_id}
-    with open(cache_path, 'w', encoding='utf-8') as f:
-        json.dump(cache_data, f, ensure_ascii=False, indent=2)
-
-    return restaurants, updated_at
+    saved = _write_cache(path, {'items': items, 'city_id': city_id})
+    return items, saved['updated_at']
 
 
+# ── 라우트 ────────────────────────────────────────────────
 @app.route('/')
 def index():
     selected_id = request.args.get('country', 'osaka')
-    days = request.args.get('days', '1')
-    hotel = request.args.get('hotel', '미설정 숙소')
-    addr = request.args.get('addr', '주소 정보 없음')
+    if selected_id not in COUNTRIES:
+        selected_id = 'osaka'
+    country = COUNTRIES[selected_id]
 
-    country_data = COUNTRIES.get(selected_id)
-    info = get_travel_info(country_data['city'], country_data['currency'])
-    info.update(country_data)
+    info = get_travel_info(country['city'], country['currency'])
+    info.update(country)
 
-    if 'phrases' in info:
-        for cat in info['phrases']:
-            for p in info['phrases'][cat]:
-                for key in ['ko', 'local']:
-                    if key in p:
-                        p[key] = p[key].replace("{days}", days).replace("{hotel}", hotel).replace("{addr}", addr)
-
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
     return render_template('index.html',
                            info=info, countries=COUNTRIES,
-                           selected_id=selected_id, days=days, hotel=hotel, addr=addr,
-                           checklist=CHECKLIST_DATA,
-                           gemini_key=gemini_key)
+                           selected_id=selected_id)
 
-
-
-def fetch_spas_from_places(lat, lon):
-    """Google Places API로 평점 4.2+ 스파/마사지 조회 (가성비 위주)"""
-    PLACES_KEY = os.getenv('PLACES_API_KEY', '')
-    if not PLACES_KEY or PLACES_KEY == 'your_google_places_api_key_here':
-        return []
-
-    results = []
-    try:
-        url = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
-        params = {
-            'location': f'{lat},{lon}',
-            'radius': 5000,
-            'type': 'spa',
-            'key': PLACES_KEY,
-            'language': 'ko',
-            'rankby': 'prominence',
-        }
-        resp = requests.get(url, params=params, timeout=10).json()
-        places = resp.get('results', [])
-
-        for p in places:
-            rating = p.get('rating', 0)
-            reviews = p.get('user_ratings_total', 0)
-            price_level = p.get('price_level', 2)  # 0~4, 3이하만 포함
-            if rating >= 4.2 and reviews >= 50 and price_level <= 3:
-                results.append({
-                    'name': p.get('name', ''),
-                    'rating': rating,
-                    'reviews': reviews,
-                    'vicinity': p.get('vicinity', ''),
-                    'price_level': price_level,
-                })
-
-        results.sort(key=lambda x: (x['rating'], x['reviews']), reverse=True)
-        results = results[:10]
-    except Exception as e:
-        print(f"Places spa API error: {e}")
-
-    return results
-
-
-def get_spa_cache_path(city_id):
-    return os.path.join(CACHE_DIR, f'spas_{city_id}.json')
-
-
-def get_spas(city_id):
-    cache_path = get_spa_cache_path(city_id)
-    if is_cache_valid(cache_path):
-        with open(cache_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return data.get('spas', [])
-
-    city_data = CITY_COORDS.get(city_id)
-    if not city_data:
-        return []
-
-    spas = fetch_spas_from_places(city_data['lat'], city_data['lon'])
-    updated_at = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-    cache_data = {'spas': spas, 'updated_at': updated_at}
-    with open(cache_path, 'w', encoding='utf-8') as f:
-        json.dump(cache_data, f, ensure_ascii=False, indent=2)
-
-    return spas
 
 @app.route('/api/restaurants/<city_id>')
 def api_restaurants(city_id):
-    """식당 목록 API - 캐시 7일, 자동 갱신"""
-    restaurants, updated_at = get_restaurants(city_id)
-    cache_path = get_restaurant_cache_path(city_id)
-    age_days = 0
-    if os.path.exists(cache_path):
-        age_days = round((time.time() - os.path.getmtime(cache_path)) / 86400, 1)
-
+    items, updated_at = get_places(city_id, 'restaurants')
     return jsonify({
-        'restaurants': restaurants,
+        'restaurants': items,
         'updated_at': updated_at,
-        'cache_age_days': age_days,
-        'count': len(restaurants)
+        'cache_age_days': _cache_age_days(_cache_path('restaurants', city_id)) or 0,
+        'count': len(items),
     })
 
 
 @app.route('/api/spas/<city_id>')
 def api_spas(city_id):
-    """스파/마사지 목록 API - 캐시 7일"""
-    spas = get_spas(city_id)
-    return jsonify({'spas': spas, 'count': len(spas)})
+    items, _ = get_places(city_id, 'spas')
+    return jsonify({'spas': items, 'count': len(items)})
 
 
 @app.route('/api/weather/<city_name>')
 def api_weather(city_name):
     data = get_weather(city_name)
-    label = _kst_label(data['fetched_at'])
     return jsonify({
         'temp': data.get('temp', '-'),
         'desc': data.get('desc', '오류'),
         'feels_like': data.get('feels_like', '-'),
         'humidity': data.get('humidity', '-'),
         'wind': data.get('wind', '-'),
-        'time_label': label,
+        'time_label': _kst_label(data['fetched_at']),
         'cached': data.get('cached', False),
     })
 
 
 @app.route('/api/rates/<currency>')
 def api_rates(currency):
-    import datetime
-    from email.utils import parsedate_to_datetime
     data = get_rates(currency.upper())
-    fetched_label = _kst_label(data['fetched_at'])
-    src = data.get('source_updated_at', '')
     try:
-        src_kst = parsedate_to_datetime(src).astimezone(
-            datetime.timezone(datetime.timedelta(hours=9))
-        )
-        source_label = src_kst.strftime("KST %m/%d %H:%M 기준")
+        src_kst = parsedate_to_datetime(data.get('source_updated_at', '')).astimezone(
+            timezone.utc).astimezone(timezone(timedelta(hours=9)))
+        time_label = src_kst.strftime("KST %m/%d %H:%M 기준")
     except Exception:
-        source_label = fetched_label
+        time_label = _kst_label(data['fetched_at'])
     return jsonify({
         'rates': data.get('rates', {}),
-        'time_label': source_label,
+        'time_label': time_label,
         'cached': data.get('cached', False),
     })
+
+
+@app.route('/api/plan', methods=['POST'])
+def api_plan():
+    """Gemini 프록시. API 키를 클라이언트에 노출하지 않기 위한 서버 중계."""
+    key = os.getenv('GEMINI_API_KEY', '')
+    if not key:
+        return jsonify({'error': 'GEMINI_API_KEY 미설정'}), 503
+
+    prompt = (request.get_json(silent=True) or {}).get('prompt', '')
+    if not prompt:
+        return jsonify({'error': 'prompt 누락'}), 400
+
+    try:
+        resp = requests.post(
+            'https://generativelanguage.googleapis.com/v1beta/models/'
+            'gemini-2.5-flash:generateContent',
+            params={'key': key},
+            json={
+                'contents': [{'parts': [{'text': prompt}]}],
+                'generationConfig': {'temperature': 0.7, 'maxOutputTokens': 8192},
+            },
+            timeout=60,
+        ).json()
+    except Exception as e:
+        return jsonify({'error': f'Gemini 호출 실패: {e}'}), 502
+
+    if 'error' in resp:
+        return jsonify({'error': resp['error'].get('message', 'API 오류')}), 502
+
+    text = (resp.get('candidates', [{}])[0]
+                .get('content', {}).get('parts', [{}])[0].get('text', ''))
+    if not text:
+        return jsonify({'error': '응답이 비어있습니다'}), 502
+    return jsonify({'text': text})
 
 
 @app.route('/data.js')
 def serve_data_js():
     js_path = os.path.join(app.static_folder, 'data.js')
-    with open(js_path, 'r', encoding='utf-8') as f:
-        js_content = f.read()
-    return Response(js_content, mimetype='application/javascript',
+    with open(js_path, encoding='utf-8') as f:
+        content = f.read()
+    return Response(content, mimetype='application/javascript',
                     headers={'Cache-Control': 'public, max-age=86400'})
 
 

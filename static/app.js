@@ -1,0 +1,1478 @@
+// TourGuide 프론트엔드 로직
+// templates/index.html에서 분리. data.js / phrases.js 로드 후 실행된다.
+// 전역 데이터(COUNTRIES_DATA, PHRASES, I18N 등)는 data.js·phrases.js에 정의됨.
+
+// ============================================================
+// Lazy load helpers (shopping.js / climate.js)
+// ============================================================
+const _loadedScripts = {};
+function lazyLoad(src) {
+    if (_loadedScripts[src]) return _loadedScripts[src];
+    _loadedScripts[src] = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src; s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+    });
+    return _loadedScripts[src];
+}
+
+// ============================================================
+// 1. i18n 딕셔너리 (Google Translate 완전 제거)
+// ============================================================
+
+// t() : 번역 헬퍼
+function t(key, vars) {
+    const dict = I18N[userSelectedLang] || I18N.ko;
+    let str = dict[key] || I18N.ko[key] || key;
+    if (vars) Object.keys(vars).forEach(k => { str = str.replace(new RegExp('{' + k + '}', 'g'), vars[k]); });
+    return str;
+}
+
+// ============================================================
+// 2. 앱 데이터 (서버 없이 JS에서 관리 - Jinja 템플릿 대체)
+// ============================================================
+
+
+function renderEmergency(cityId) {
+    const el = document.getElementById('emergencyList');
+    if (!el) return;
+    const d = EMERGENCY_DATA[cityId];
+    if (!d) { el.innerHTML = ''; return; }
+    const L = userSelectedLang;
+    const labels = {
+        police:    { ko:'경찰', ja:'警察', vi:'Cảnh sát', th:'ตำรวจ', 'zh-CN':'警察', 'zh-TW':'警察', en:'Police' },
+        ambulance: { ko:'구급/소방', ja:'救急・消防', vi:'Cấp cứu', th:'รถพยาบาล', 'zh-CN':'急救', 'zh-TW':'急救', en:'Ambulance' },
+        embassy:   { ko:'한국 공관', ja:'韓国公館', vi:'Lãnh sự quán Hàn Quốc', th:'สถานกงสุลเกาหลี', 'zh-CN':'韩国领馆', 'zh-TW':'韓國領館', en:'Korean Consulate' },
+        tip:       { ko:'※ 긴급 시 로밍 없이도 발신 가능', ja:'※緊急時はローミングなしでも発信可', vi:'※ Gọi được kể cả không roaming', th:'※โทรได้แม้ไม่มีโรมมิ่ง', 'zh-CN':'※紧急时无漫游也可拨出', 'zh-TW':'※緊急時無漫遊也可撥出', en:'※ Works even without roaming' }
+    };
+    const rows = [
+        { icon:'fa-shield-halved', label: labels.police[L]||labels.police.en, number: d.police },
+        { icon:'fa-truck-medical', label: labels.ambulance[L]||labels.ambulance.en, number: d.ambulance },
+    ];
+    if (d.embassy) rows.push({ icon:'fa-landmark', label: labels.embassy[L]||labels.embassy.en, sub: d.embassyLabel, number: d.embassy });
+
+    el.innerHTML = `
+        <div class="emergency-grid">
+            ${rows.map(r => `
+            <a href="tel:${r.number}" class="emergency-item">
+                <div class="emergency-icon"><i class="fa-solid ${r.icon}"></i></div>
+                <div class="emergency-info">
+                    <span class="emergency-label">${r.label}${r.sub ? `<small>${r.sub}</small>` : ''}</span>
+                    <span class="emergency-number">${r.number}</span>
+                </div>
+                <div class="emergency-call"><i class="fa-solid fa-phone"></i></div>
+            </a>`).join('')}
+        </div>
+        <p class="emergency-tip">${labels.tip[L]||labels.tip.en}</p>
+    `;
+}
+
+
+// 앱 이름 다국어
+const APP_NAME_I18N = {
+    '구글맵':       { ko:'구글맵',       ja:'Google マップ',  vi:'Google Maps',     th:'Google Maps',         'zh-CN':'谷歌地图',   'zh-TW':'Google 地圖',  en:'Google Maps' },
+    '파파고':       { ko:'파파고',        ja:'Papago',         vi:'Papago',          th:'Papago',              'zh-CN':'Papago翻译', 'zh-TW':'Papago翻譯',   en:'Papago' },
+    'Visit Japan Web': { ko:'Visit Japan Web', ja:'Visit Japan Web', vi:'Visit Japan Web', th:'Visit Japan Web', 'zh-CN':'Visit Japan Web', 'zh-TW':'Visit Japan Web', en:'Visit Japan Web' },
+    '오사카 e-패스':  { ko:'오사카 e-패스',  ja:'大阪 e-パス',    vi:'Osaka e-Pass',    th:'Osaka e-Pass',        'zh-CN':'大阪e-通行证','zh-TW':'大阪e-通行證', en:'Osaka e-Pass' },
+    '오사카 주유패스': { ko:'오사카 주유패스', ja:'大阪周遊パス',    vi:'Osaka Amazing Pass', th:'Osaka Amazing Pass', 'zh-CN':'大阪周游券',  'zh-TW':'大阪周遊券',  en:'Osaka Amazing Pass' },
+    'Grab':         { ko:'Grab',          ja:'Grab',           vi:'Grab',            th:'Grab',                'zh-CN':'Grab',       'zh-TW':'Grab',         en:'Grab' },
+    'Bolt':         { ko:'Bolt',          ja:'Bolt',           vi:'Bolt',            th:'Bolt',                'zh-CN':'Bolt',       'zh-TW':'Bolt',         en:'Bolt' },
+    'EasyWallet':   { ko:'EasyWallet',    ja:'EasyWallet',     vi:'EasyWallet',      th:'EasyWallet',          'zh-CN':'EasyWallet', 'zh-TW':'EasyWallet',   en:'EasyWallet' },
+    'Uber':         { ko:'Uber',          ja:'Uber',           vi:'Uber',            th:'Uber',                'zh-CN':'Uber',       'zh-TW':'Uber',         en:'Uber' },
+    'Yelp':         { ko:'Yelp',          ja:'Yelp',           vi:'Yelp',            th:'Yelp',                'zh-CN':'Yelp',       'zh-TW':'Yelp',         en:'Yelp' },
+    'Google Maps':  { ko:'Google Maps',   ja:'Google マップ',  vi:'Google Maps',     th:'Google Maps',         'zh-CN':'谷歌地图',   'zh-TW':'Google 地圖',  en:'Google Maps' },
+    'Octopus':      { ko:'Octopus',       ja:'Octopus',        vi:'Octopus',         th:'Octopus',             'zh-CN':'八达通',     'zh-TW':'八達通',       en:'Octopus' },
+    '네이버 지도':  { ko:'네이버 지도',    ja:'Naver Map',      vi:'Naver Map',       th:'Naver Map',           'zh-CN':'Naver地图',  'zh-TW':'Naver地圖',    en:'Naver Map' },
+    '카카오T':      { ko:'카카오T',        ja:'Kakao T',        vi:'Kakao T',         th:'Kakao T',             'zh-CN':'Kakao T',    'zh-TW':'Kakao T',      en:'Kakao T' },
+    'Papago':       { ko:'파파고',         ja:'Papago',         vi:'Papago',          th:'Papago',              'zh-CN':'Papago翻译', 'zh-TW':'Papago翻譯',   en:'Papago' },
+};
+
+// 앱 설명 다국어
+const APP_DESC_I18N = {
+    '지도 및 길찾기':        { ko:'지도 및 길찾기',         ja:'地図と道案内',        vi:'Bản đồ & Chỉ đường',   th:'แผนที่และเส้นทาง',     'zh-CN':'地图和导航',      'zh-TW':'地圖和導航',      en:'Maps & Navigation' },
+    '빠른 입국 심사(웹)':    { ko:'빠른 입국 심사(웹)',     ja:'スムーズな入国審査(ウェブ)', vi:'Nhập cảnh nhanh (web)', th:'ตรวจคนเข้าเมืองเร็ว', 'zh-CN':'快速入境审查(网页)','zh-TW':'快速入境審查(網頁)', en:'Fast immigration (web)' },
+    '카메라·이미지 번역 특화': { ko:'카메라·이미지 번역 특화', ja:'カメラ・画像翻訳特化', vi:'Chuyên dịch ảnh & camera', th:'เชี่ยวชาญแปลรูปภาพ', 'zh-CN':'相机·图像翻译专项', 'zh-TW':'相機·圖像翻譯專項', en:'Camera & image translation' },
+    '관광지 입장 및 교통':   { ko:'관광지 입장 및 교통',   ja:'観光地入場・交通',    vi:'Vé tham quan & Giao thông', th:'บัตรท่องเที่ยวและขนส่ง', 'zh-CN':'景点门票和交通',  'zh-TW':'景點門票和交通',  en:'Attractions & Transport' },
+    '동남아 필수 택시 호출': { ko:'동남아 필수 택시 호출', ja:'東南アジア必須タクシー', vi:'Gọi xe Đông Nam Á',   th:'แท็กซี่เอเชียตะวันออกเฉียงใต้', 'zh-CN':'东南亚必备打车', 'zh-TW':'東南亞必備叫車', en:'Essential SE Asia taxi' },
+    '그랩보다 저렴한 택시':  { ko:'그랩보다 저렴한 택시', ja:'Grabより安いタクシー', vi:'Taxi rẻ hơn Grab',    th:'แท็กซี่ถูกกว่า Grab',  'zh-CN':'比Grab更便宜的打车','zh-TW':'比Grab更便宜的叫車', en:'Cheaper taxi than Grab' },
+    '이지카드 잔액 확인':    { ko:'이지카드 잔액 확인',    ja:'悠遊カード残高確認',  vi:'Kiểm tra số dư EasyCard', th:'ตรวจยอด EasyCard',   'zh-CN':'悠游卡余额查询',   'zh-TW':'悠遊卡餘額查詢',  en:'EasyCard balance check' },
+    '대만 택시 호출 앱':     { ko:'대만 택시 호출 앱',     ja:'台湾タクシーアプリ',  vi:'App gọi xe Đài Loan',  th:'แอปเรียกแท็กซี่ไต้หวัน', 'zh-CN':'台湾打车应用',    'zh-TW':'台灣叫車應用',    en:'Taiwan taxi app' },
+    '홍콩 필수 교통카드 앱': { ko:'홍콩 필수 교통카드 앱', ja:'香港必須交通カードアプリ', vi:'App thẻ giao thông HK', th:'แอปบัตรโดยสารฮ่องกง', 'zh-CN':'香港必备交通卡应用','zh-TW':'香港必備交通卡應用', en:'HK essential transit card' },
+    '필수 차량 호출 앱':     { ko:'필수 차량 호출 앱',     ja:'必須ライドシェアアプリ', vi:'App gọi xe thiết yếu', th:'แอปเรียกรถจำเป็น',    'zh-CN':'必备叫车应用',    'zh-TW':'必備叫車應用',    en:'Essential ride-hailing app' },
+    '현지인 맛집 리뷰':      { ko:'현지인 맛집 리뷰',      ja:'地元レストランレビュー', vi:'Review nhà hàng địa phương', th:'รีวิวร้านอาหารท้องถิ่น', 'zh-CN':'本地餐厅评价',  'zh-TW':'本地餐廳評價',    en:'Local restaurant reviews' },
+    '지도 및 길찾기':        { ko:'지도 및 길찾기',        ja:'地図と道案内',        vi:'Bản đồ & Chỉ đường',   th:'แผนที่และเส้นทาง',    'zh-CN':'地图和导航',      'zh-TW':'地圖和導航',      en:'Maps & Navigation' },
+    'Best navigation in Korea': { ko:'한국 최고의 지도앱', ja:'韓国最高地図アプリ', vi:'Bản đồ tốt nhất Hàn Quốc', th:'นำทางที่ดีที่สุดในเกาหลี', 'zh-CN':'韩国最佳地图', 'zh-TW':'韓國最佳地圖', en:'Best navigation in Korea' },
+    '택시·교통 호출 앱': { ko:'택시·교통 호출 앱', ja:'タクシー・交通手配', vi:'Gọi taxi và vận chuyển', th:'เรียกแท็กซี่และขนส่ง', 'zh-CN':'叫车和交通预约', 'zh-TW':'叫車和交通預約', en:'Taxi & transport hailing' },
+    'Korean translation app': { ko:'한국어 번역 앱', ja:'韓国語翻訳アプリ', vi:'App dịch tiếng Hàn', th:'แอปแปลภาษาเกาหลี', 'zh-CN':'韩语翻译应用', 'zh-TW':'韓語翻譯應用', en:'Korean translation app' },
+    '주유패스 공식 홈페이지(웹)':   { ko:'주유패스 공식 홈페이지(웹)',   ja:'周遊パス公式サイト(ウェブ)',  vi:'Trang web chính thức Amazing Pass', th:'เว็บไซต์ Amazing Pass',  'zh-CN':'周游券官网(网页)',   'zh-TW':'周遊券官網(網頁)',   en:'Official Amazing Pass website' },
+    '교통권 없는 입장 전용 패스(홈페이지)': { ko:'교통권 없는 입장 전용 패스(홈페이지)', ja:'交通なし入場専用パス(ウェブ)', vi:'Pass tham quan không có giao thông (web)', th:'พาสเข้าชมไม่มีขนส่ง (เว็บ)', 'zh-CN':'无交通纯入场券(网页)', 'zh-TW':'無交通純入場券(網頁)', en:'Attraction-only pass, no transport (web)' },
+    '홍콩 택시·차량 호출 앱': { ko:'홍콩 택시·차량 호출 앱', ja:'香港タクシー・ライドシェアアプリ', vi:'App gọi xe taxi Hong Kong', th:'แอปเรียกแท็กซี่ฮ่องกง', 'zh-CN':'香港出租车/叫车应用', 'zh-TW':'香港計程車/叫車應用', en:'Hong Kong taxi & ride-hailing' },
+};
+
+// 알레르기 항목 이름 다국어
+function renderAllergySelector() {
+    const sel = document.getElementById('allergySelector');
+    if (!sel) return;
+    const L = userSelectedLang || 'ko';
+    const keys = Object.keys(ALLERGY_OPTION_I18N);
+    sel.innerHTML = keys.map(key => {
+        const label = (ALLERGY_OPTION_I18N[key] || {})[L] || key;
+        return `<option value="${key}">${label}</option>`;
+    }).join('');
+}
+
+// ============================================================
+// 3. 상태
+// ============================================================
+let userSelectedLang = localStorage.getItem('selectedLang') || 'ko';
+let currentCountryId = new URLSearchParams(location.search).get('country') || 'osaka';
+let currentDisplayRate = 1;
+let sourceCurrency = 'JPY';
+let targetCurrency = 'KRW';
+
+// ============================================================
+// 4. UI 텍스트 일괄 교체 (data-i18n)
+// ============================================================
+function applyI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+    // btn_to_local은 도시 언어 기반
+    const cityLang = COUNTRIES_DATA[currentCountryId]?.lang || 'en';
+    const targetBtn = document.getElementById('targetLangBtn');
+    if (targetBtn) {
+        targetBtn.textContent = t('btn_to_local', {lang: LANG_NAMES[cityLang]});
+    }
+    // calcUnitMsg 업데이트
+    const calcUnitMsg = document.getElementById('calcUnitMsg');
+    if (calcUnitMsg) calcUnitMsg.textContent = t('calc_unit_msg', {curr: sourceCurrency, unit: formatNumber(getUnit(sourceCurrency, targetCurrency))});
+}
+
+// ============================================================
+// 5. 언어 변경 (reload 없음, localStorage 저장)
+// ============================================================
+function changeLang(langCode) {
+    userSelectedLang = langCode;
+    localStorage.setItem('selectedLang', langCode);
+    updateCalcCurrencies();   // targetCurrency 먼저 세팅
+    updateRateDisplay();      // 그 다음 환율 API 호출
+    applyI18n();
+    updateTranslateButtons();
+    renderAllergySelector();
+    updateAllergyPhrase();
+    renderMonthSelector();
+    renderMonthDetail();
+    const _d = COUNTRIES_DATA[currentCountryId];
+    if (_d) { renderCityContent(_d); applyI18n(); renderPhrases(_d.lang); }
+    renderChecklist();        // 체크리스트 카테고리명 재렌더링
+    updateCalcTabLabel();
+}
+
+// ============================================================
+// 6. 여행지 변경
+// ============================================================
+function changeCity(cityId) {
+    currentCountryId = cityId;
+    const data = COUNTRIES_DATA[cityId];
+    if (!data) return;
+    sourceCurrency = data.currency;
+    renderCityContent(data);
+    updateRateDisplay();
+    updateCalcCurrencies();
+    applyI18n();
+    updateTranslateButtons();
+    updateAllergyPhrase();
+    fetchWeather(data.lat, data.lon, data.city);
+    syncBudgetUnits();
+    syncBudgetUnitsD();
+    renderMonthSelector();
+    renderMonthDetail();
+    renderEmergency(cityId);
+    updateTipCalcVisibility();
+    history.replaceState(null, '', '/?country=' + cityId);
+}
+
+// ============================================================
+// 7. 도시 콘텐츠 렌더링
+// ============================================================
+// ============================================================
+// 번역 캐시 + gtx 번역 헬퍼 (팁/경고 자동 번역)
+// ============================================================
+const _transCache = {};
+
+async function gtxTranslate(text, tl) {
+    if (tl === 'ko') return text;
+    const key = tl + '|' + text;
+    if (_transCache[key]) return _transCache[key];
+    try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        const result = json?.[0]?.map(s => s?.[0] || '').join('') || text;
+        _transCache[key] = result;
+        return result;
+    } catch { return text; }
+}
+
+async function translateItems(items, tl) {
+    if (tl === 'ko') return items;
+    return Promise.all(items.map(item => gtxTranslate(item, tl)));
+}
+
+function renderCityContent(data) {
+    // 팁/주의 — 언어에 맞게 번역 후 표시
+    const tipsList = document.getElementById('tipsList');
+    const warningsList = document.getElementById('warningsList');
+    const tl = userSelectedLang;
+
+    // 일단 원문(한국어) 먼저 표시
+    if (tipsList) tipsList.innerHTML = data.tips.map(item => `<li>${item}</li>`).join('');
+    if (warningsList) warningsList.innerHTML = data.warnings.map(w => `<li>${w}</li>`).join('');
+
+    // 한국어가 아니면 번역 후 교체
+    if (tl !== 'ko') {
+        translateItems(data.tips, tl).then(translated => {
+            if (tipsList) tipsList.innerHTML = translated.map(item => `<li>${item}</li>`).join('');
+        });
+        translateItems(data.warnings, tl).then(translated => {
+            if (warningsList) warningsList.innerHTML = translated.map(w => `<li>${w}</li>`).join('');
+        });
+    }
+
+    // 앱
+    const appsList = document.getElementById('appsList');
+    if (appsList) {
+        const renderApps = (apps) => {
+            appsList.innerHTML = apps.map(app => {
+                const localName = (APP_NAME_I18N[app.name] || {})[userSelectedLang] || app.name;
+                const localDesc = (APP_DESC_I18N[app.desc] || {})[userSelectedLang] || app.desc;
+                return `
+            <div class="app-item-compact">
+                <div class="app-icon-small"><i class="fa-solid fa-mobile-screen"></i></div>
+                <div class="app-info-small"><strong>${localName}</strong><small>${localDesc}</small></div>
+                <a href="${app.link}" target="_blank" rel="noopener noreferrer" class="app-btn-small">
+                    <i class="fa-solid fa-download"></i>
+                </a>
+            </div>`;
+            }).join('');
+        };
+        lazyLoad('/static/shopping.js').then(() => {
+            const apps = (APPS_DATA || {})[currentCountryId] || [];
+            renderApps(apps);
+            const tl = userSelectedLang;
+            if (tl !== 'ko') {
+                Promise.all(apps.map(async app => ({
+                    ...app,
+                    desc: await gtxTranslate(app.desc, tl)
+                }))).then(renderApps);
+            }
+        });
+    }
+
+    // 쇼핑 — 탭 기반 렌더링
+    const renderShopping = (shopping) => {
+        const tabs = document.getElementById('shoppingTabs');
+        const contents = document.getElementById('shoppingContents');
+        if (!tabs || !contents) return;
+
+        const isCategorized = shopping.length > 0 && shopping[0].category;
+        const groups = isCategorized ? shopping : [{category:'🛍️ 전체', items: shopping}];
+
+        tabs.innerHTML = groups.map((g, i) =>
+            `<button class="phrase-tab-btn${i===0?' active':''}" onclick="showShoppingTab(event,'shtab${i}')" title="${g.category}">${g.category}</button>`
+        ).join('');
+
+        contents.innerHTML = groups.map((g, i) => {
+            const itemsHtml = g.items.map(item => {
+                const searchQ = encodeURIComponent(data.city + ' ' + item.name);
+                const noteHtml = item.note ? `<span class="shop-note">${item.note}</span>` : '';
+                return `<a href="https://www.google.com/search?q=${searchQ}&tbm=isch"
+                    target="_blank" rel="noopener noreferrer" class="shop-item">
+                    <span class="shop-emoji">${item.emoji}</span>
+                    <span class="shop-info">
+                        <span class="shop-name">${item.name}</span>
+                        <span class="shop-meta"><span class="shop-price">${item.price}</span><span class="shop-tag">${item.tag}</span></span>
+                        ${noteHtml}
+                    </span>
+                </a>`;
+            }).join('');
+            return `<div id="shtab${i}" class="phrase-tab-content${i===0?' active':''}">
+                <div class="shopping-grid">${itemsHtml}</div>
+            </div>`;
+        }).join('');
+    };
+    lazyLoad('/static/shopping.js').then(() => {
+        const shopping = (SHOPPING_DATA || {})[currentCountryId] || [];
+        renderShopping(shopping);
+    });
+
+    // 회화 탭
+    renderPhrases(data.lang);
+}
+
+// phrases.js 로드됨 (별도 파일)
+
+    const COUNTRY_TO_PHRASE_KEY = {
+    tokyo:'japan', osaka:'japan', fukuoka:'japan',
+    danang:'vietnam', hochiminh:'vietnam',
+    bangkok:'thailand', taipei:'taiwan', hongkong:'hongkong',
+    nyc:'usa', seoul:'korea'
+};
+
+function renderPhrases(cityLang) {
+    const phraseKey = COUNTRY_TO_PHRASE_KEY[currentCountryId] || 'japan';
+    const phraseData = PHRASES[phraseKey];
+    const tabs = document.getElementById('phraseTabs');
+    const contents = document.getElementById('phraseContents');
+    if (!tabs || !contents || !phraseData) return;
+
+    // 현재 UI 언어 (내장 다국어 데이터에서 직접 가져옴)
+    const uiLang = userSelectedLang;
+    const cats = Object.keys(phraseData);
+
+    tabs.innerHTML = cats.map((cat, i) =>
+        `<button class="phrase-tab-btn${i===0?' active':''}" onclick="showPhraseTab(event,'pcat${i}')">${cat}</button>`
+    ).join('');
+
+    contents.innerHTML = cats.map((cat, i) => `
+        <div id="pcat${i}" class="phrase-tab-content${i===0?' active':''}">
+            <div class="phrase-card-new">
+                ${phraseData[cat].map(p => `
+                    <div class="phrase-item-new">
+                        <div class="phrase-ko">${p[uiLang] || p.ko}</div>
+                        <div class="phrase-local">${p.local}</div>
+                    </div>`).join('')}
+            </div>
+        </div>`).join('');
+}
+
+// ============================================================
+// 팁 계산기
+// ============================================================
+let tipPct = 15;
+let tipSplit = 1;
+
+function selectTipPct(btn, pct) {
+    tipPct = pct;
+    document.querySelectorAll('.tip-pct-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    calcTip();
+}
+
+function changeSplit(delta) {
+    tipSplit = Math.max(1, tipSplit + delta);
+    document.getElementById('tipSplitCount').textContent = tipSplit;
+    calcTip();
+}
+
+function calcTip() {
+    const raw = parseFloat(removeCommas(document.getElementById('tipBillInput')?.value || '0'));
+    if (!raw || isNaN(raw)) {
+        document.getElementById('tipAmountResult').textContent = '-';
+        document.getElementById('tipTotalResult').textContent = '-';
+        document.getElementById('tipPerPersonResult').textContent = '-';
+        return;
+    }
+    const curr = COUNTRIES_DATA[currentCountryId]?.currency || 'USD';
+    const tip = raw * tipPct / 100;
+    const total = raw + tip;
+    const per = total / tipSplit;
+    const fmt = v => formatResult(v) + ' ' + curr;
+    document.getElementById('tipAmountResult').textContent = fmt(tip);
+    document.getElementById('tipTotalResult').textContent = fmt(total);
+    document.getElementById('tipPerPersonResult').textContent = fmt(per);
+}
+
+function updateTipCalcVisibility() {
+    const card = document.getElementById('tipCalcCard');
+    if (!card) return;
+    const show = TIP_CITIES.has(currentCountryId);
+    card.style.display = show ? '' : 'none';
+    if (show) {
+        const currLabel = document.getElementById('tipCurrencyLabel');
+        if (currLabel) currLabel.textContent = COUNTRIES_DATA[currentCountryId]?.currency || 'USD';
+    }
+}
+
+// ============================================================
+// 날씨 상세 업데이트
+// ============================================================
+const WEATHER_ICONS = {
+    '맑음':'☀️','흐림':'☁️','비':'🌧️','이슬비':'🌦️','뇌우':'⛈️',
+    '눈':'❄️','안개':'🌫️','연무':'🌫️','실안개':'🌁','먼지':'🌪️',
+    '짙은 안개':'🌫️','황사':'🌪️','화산재':'🌋','돌풍':'💨','토네이도':'🌪️'
+};
+
+function updateWeatherDetail(cityName, temp, descKo, extra) {
+    const icon = document.getElementById('weatherIconBig');
+    const name = document.getElementById('weatherCityName');
+    const tempEl = document.getElementById('weatherTempBig');
+    const desc = document.getElementById('weatherDescBig');
+    const sub = document.getElementById('weatherSubGrid');
+    if (!icon || !name || !tempEl || !desc) return;
+    icon.textContent = WEATHER_ICONS[descKo] || '🌡️';
+    name.textContent = cityName;
+    tempEl.textContent = temp + '°C';
+    desc.textContent = translateWeatherDesc(descKo);
+    if (sub && extra) {
+        const L = userSelectedLang;
+        const subLabels = {
+            feels_like: { ko:'체감온도', ja:'体感温度', vi:'Cảm giác', th:'รู้สึก', 'zh-CN':'体感温度', 'zh-TW':'體感溫度', en:'Feels like' },
+            humidity:   { ko:'습도',    ja:'湿度',    vi:'Độ ẩm',  th:'ความชื้น', 'zh-CN':'湿度',   'zh-TW':'濕度',   en:'Humidity' },
+            wind:       { ko:'풍속',    ja:'風速',    vi:'Gió',    th:'ลม',       'zh-CN':'风速',   'zh-TW':'風速',   en:'Wind' },
+        };
+        sub.innerHTML = `
+            <div class="weather-sub-item"><span>${subLabels.feels_like[L]||'Feels like'}</span><strong>${extra.feels_like}°C</strong></div>
+            <div class="weather-sub-item"><span>${subLabels.humidity[L]||'Humidity'}</span><strong>${extra.humidity}%</strong></div>
+            <div class="weather-sub-item"><span>${subLabels.wind[L]||'Wind'}</span><strong>${extra.wind}m/s</strong></div>
+        `;
+    }
+}
+
+// 체크리스트 렌더링
+function renderChecklist() {
+    const tabs = document.getElementById('checklistTabs');
+    const contents = document.getElementById('checklistContents');
+    if (!tabs || !contents) return;
+
+    const cats = Object.keys(CHECKLIST_DATA);
+
+    // 탭 버튼 (이모지만 표시)
+    tabs.innerHTML = cats.map((cat, i) => {
+        const emoji = cat.match(/^(\S+)/)?.[1] || cat;
+        return `<button class="phrase-tab-btn${i===0?' active':''}" onclick="showChecklistTab(event,'chtab${i}')" title="${(CHECKLIST_CATEGORY_I18N[cat]||{}).ko||cat}">${emoji}</button>`;
+    }).join('');
+
+    // 탭 내용
+    contents.innerHTML = cats.map((cat, catIdx) => {
+        const items = CHECKLIST_DATA[cat];
+        const itemsHtml = items.map((item, i) => {
+            const id = `chk_${catIdx}_${i}`;
+            const checked = localStorage.getItem('chk_' + id) === '1';
+            const itemLabel = (CHECKLIST_ITEM_I18N[item] || {})[userSelectedLang] || item;
+            return `<div class="checklist-item">
+                <input type="checkbox" id="${id}" ${checked?'checked':''} onchange="saveCheck(this)">
+                <label for="${id}">${itemLabel}</label>
+            </div>`;
+        }).join('');
+        return `<div id="chtab${catIdx}" class="phrase-tab-content${catIdx===0?' active':''}">${itemsHtml}</div>`;
+    }).join('');
+}
+
+function showChecklistTab(e, tabId) {
+    document.querySelectorAll('#checklistContents .phrase-tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#checklistTabs .phrase-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId)?.classList.add('active');
+    e.target.classList.add('active');
+}
+
+function saveCheck(el) {
+    localStorage.setItem('chk_' + el.id, el.checked ? '1' : '0');
+}
+
+// ============================================================
+// 8. 환율
+// ============================================================
+// 환율 캐시 (클라이언트 측 — 같은 통화 중복 호출 방지)
+const _rateCache = {};
+
+async function fetchExchangeRate(from, to) {
+    if (_rateCache[from]) {
+        return _rateCache[from].rates?.[to] || 1;
+    }
+    try {
+        const res = await fetch(`/api/rates/${from}`);
+        const data = await res.json();
+        _rateCache[from] = data;
+        // 기준 시각 표시
+        const label = document.getElementById('rateTimeLabel');
+        if (label && data.time_label) label.textContent = data.time_label;
+        return data.rates?.[to] || 1;
+    } catch { return 1; }
+}
+
+// 날씨 설명 다국어 번역 테이블
+// ============================================================
+// 월별 기후 데이터 (도시별 × 12개월)
+// min/max: °C, rain: 우천일수, season: peak/shoulder/off, outfit: 옷차림 코드
+// ============================================================
+
+// 시즌 아이콘
+const SEASON_ICON = { peak:'🌟', shoulder:'👍', off:'💤' };
+
+let _selectedMonth = new Date().getMonth(); // 현재 월로 초기화
+
+function renderMonthSelector() {
+    const sel = document.getElementById('monthSelector');
+    if (!sel) return;
+    const L = userSelectedLang;
+    const months = (I18N[L] || I18N.ko).climate_months;
+    sel.innerHTML = months.map((m, i) =>
+        `<button class="month-btn${i === _selectedMonth ? ' active' : ''}" onclick="selectMonth(${i})">${m}</button>`
+    ).join('');
+}
+
+function selectMonth(idx) {
+    _selectedMonth = idx;
+    renderMonthSelector();
+    renderMonthDetail();
+}
+
+function renderMonthDetail() {
+    const box = document.getElementById('monthDetailBox');
+    if (!box) return;
+    if (typeof CLIMATE_DATA === 'undefined') {
+        lazyLoad('/static/climate.js').then(() => renderMonthDetail());
+        return;
+    }
+    const L = userSelectedLang;
+    const t = I18N[L] || I18N.ko;
+    const data = (CLIMATE_DATA[currentCountryId] || CLIMATE_DATA.tokyo)[_selectedMonth];
+    const outfitText = (OUTFIT_I18N[data.outfit] || {})[L] || OUTFIT_I18N[data.outfit].en;
+    const seasonLabel = { peak: t.climate_peak, shoulder: t.climate_shoulder, off: t.climate_off };
+    const seasonColors = { peak: '#667eea', shoulder: '#43b89c', off: '#aaa' };
+    const color = seasonColors[data.season];
+
+    // 헤더 칩은 실시간 날씨(fetchWeather)가 담당
+    box.innerHTML = `
+        <div class="climate-detail">
+            <div class="climate-season-badge" style="background:${color}">
+                ${SEASON_ICON[data.season]} ${seasonLabel[data.season]}
+            </div>
+            <div class="climate-stats">
+                <div class="climate-stat-item">
+                    <span class="climate-stat-icon">🌡️</span>
+                    <span class="climate-stat-label">${t.climate_temp_range}</span>
+                    <span class="climate-stat-value">${data.min}° / ${data.max}°C</span>
+                </div>
+                <div class="climate-stat-item">
+                    <span class="climate-stat-icon">🌧️</span>
+                    <span class="climate-stat-label">${t.climate_rain}</span>
+                    <span class="climate-stat-value">${data.rain}일</span>
+                </div>
+                <div class="climate-stat-item outfit-item">
+                    <span class="climate-stat-icon">👔</span>
+                    <span class="climate-stat-label">${t.climate_outfit}</span>
+                    <span class="climate-stat-value">${outfitText}</span>
+                </div>
+            </div>
+            <div class="climate-temp-bar">
+                ${renderTempBar(data.min, data.max)}
+            </div>
+        </div>`;
+}
+
+function renderTempBar(min, max) {
+    // -10 ~ 40 범위 기준
+    const range = 50, offset = 10;
+    const left = Math.max(0, ((min + offset) / range) * 100);
+    const width = Math.min(100 - left, ((max - min) / range) * 100);
+    const color = max >= 30 ? '#ff6b6b' : max >= 20 ? '#ffa94d' : max >= 10 ? '#74c0fc' : '#a5d8ff';
+    return `<div class="temp-bar-track">
+        <div class="temp-bar-fill" style="left:${left.toFixed(1)}%;width:${width.toFixed(1)}%;background:${color}"></div>
+        <span class="temp-bar-min">${min}°</span>
+        <span class="temp-bar-max">${max}°</span>
+    </div>`;
+}
+
+
+function translateWeatherDesc(koDesc) {
+    const table = WEATHER_I18N[userSelectedLang] || WEATHER_I18N.en;
+    return table[koDesc] || koDesc;
+}
+
+// 마지막으로 받은 날씨 정보 캐시 (언어 변경 시 재표시용)
+let _lastWeather = null;
+
+async function fetchWeather(lat, lon, cityName) {
+    const el = document.getElementById('weatherDisplay');
+    if (!el) return;
+    el.textContent = '...';
+    try {
+        const res = await fetch(`/api/weather/${encodeURIComponent(cityName)}`);
+        const json = await res.json();
+        _lastWeather = { cityName, temp: json.temp, descKo: json.desc, extra: { feels_like: json.feels_like ?? '-', humidity: json.humidity ?? '-', wind: json.wind ?? '-' } };
+        el.textContent = `${cityName} ${json.temp}°C ${translateWeatherDesc(json.desc)}`;
+        updateWeatherDetail(cityName, json.temp, json.desc, _lastWeather.extra);
+        // 기준 시각 표시
+        const label = document.getElementById('weatherTimeLabel');
+        if (label && json.time_label) label.textContent = json.time_label;
+    } catch(e) {
+        el.textContent = `${cityName} -`;
+    }
+}
+
+function refreshWeatherDisplay() {
+    if (!_lastWeather) return;
+    const el = document.getElementById('weatherDisplay');
+    if (el) el.textContent = `${_lastWeather.cityName} ${_lastWeather.temp}°C ${translateWeatherDesc(_lastWeather.descKo)}`;
+    updateWeatherDetail(_lastWeather.cityName, _lastWeather.temp, _lastWeather.descKo, _lastWeather.extra);
+}
+
+// 통화별 환전소 최소 단위
+// 계산기용 환전 최소 단위 (입력값 반올림 기준)
+
+function getUnit(sourceCurrency, targetCurrency) {
+    return CURRENCY_UNIT[sourceCurrency] || 1;
+}
+
+// 결과값 포맷: 소수점 2자리, 천단위 콤마
+function formatResult(value) {
+    const fixed = value.toFixed(2).replace(/\.00$/, '');
+    const parts = fixed.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
+}
+
+// 상단 칩 전용: target 기준 보기 좋은 단위 자동 계산
+// - KRW·JPY 등 정수 통화: 결과 1 이상 나오는 최소 단위
+// - USD·EUR 등 소수 통화: 결과 0.01 이상 나오는 최소 단위 (소수점 2자리 의미있게)
+const DECIMAL_CURRENCIES = ['USD', 'EUR'];
+function calcDisplayUnit(rate, targetCurrency) {
+    const threshold = DECIMAL_CURRENCIES.includes(targetCurrency) ? 0.01 : 1;
+    const steps = [1, 10, 100, 1000, 10000, 100000];
+    for (const step of steps) {
+        if (rate * step >= threshold) return step;
+    }
+    return 100000;
+}
+
+async function updateRateDisplay() {
+    const rateDisplay = document.getElementById('rateDisplay');
+    const rateCurrencyLabel = document.getElementById('rateCurrencyLabel');
+    if (!rateDisplay) return;
+
+    const langCurrency = LANG_TO_CURRENCY[userSelectedLang] || 'KRW';
+    sourceCurrency = COUNTRIES_DATA[currentCountryId]?.currency || 'JPY';
+
+    if (langCurrency === sourceCurrency) {
+        rateDisplay.textContent = '-';
+        if (rateCurrencyLabel) rateCurrencyLabel.textContent = t('same_currency');
+        const tl = document.getElementById('rateTimeLabel');
+        if (tl) tl.textContent = '';
+        targetCurrency = sourceCurrency;
+        currentDisplayRate = 1;
+        return;
+    }
+
+    targetCurrency = langCurrency;
+    rateDisplay.textContent = '...';
+
+    const rate = await fetchExchangeRate(sourceCurrency, targetCurrency);
+    currentDisplayRate = rate;
+
+    // 상단 칩: 결과가 1 이상 나오는 단위 자동 선택
+    const displayUnit = calcDisplayUnit(rate, targetCurrency);
+    const rawValue = rate * displayUnit;
+
+    rateDisplay.textContent = `${formatResult(rawValue)} ${targetCurrency}`;
+    if (rateCurrencyLabel) rateCurrencyLabel.textContent = `${formatNumber(displayUnit)} ${sourceCurrency}`;
+}
+
+function updateCalcCurrencies() {
+    sourceCurrency = COUNTRIES_DATA[currentCountryId]?.currency || 'JPY';
+    targetCurrency = LANG_TO_CURRENCY[userSelectedLang] || 'KRW';
+    const src = document.getElementById('calcSourceCurrency');
+    const tgt = document.getElementById('calcTargetCurrency');
+    const unitInfo = document.getElementById('calcUnitInfo');
+    const unitMsg = document.getElementById('calcUnitMsg');
+    if (src) src.textContent = sourceCurrency;
+    if (tgt) tgt.textContent = targetCurrency;
+    if (unitInfo) unitInfo.style.display = (getUnit(sourceCurrency, targetCurrency) > 1) ? 'flex' : 'none';
+    if (unitMsg) unitMsg.textContent = t('calc_unit_msg', {curr: sourceCurrency, unit: formatNumber(getUnit(sourceCurrency, targetCurrency))});
+}
+
+function calculateExchange() {
+    const fi = document.getElementById('foreignInput');
+    const ko = document.getElementById('krwOutput');
+    let val = parseFloat(removeCommas(fi.value));
+    if (!val || isNaN(val)) { alert(t('alert_enter_amount')); return; }
+
+    // 통화별 최소 환전 단위로 반올림 (0이 되면 최소 단위로 올림)
+    const unit = getUnit(sourceCurrency, targetCurrency);
+    if (unit > 1) {
+        let rounded = Math.round(val / unit) * unit;
+        if (rounded === 0) rounded = unit;  // 최소 단위 미만이면 1단위로 올림
+        if (rounded !== val) {
+            fi.value = formatNumber(rounded);
+            val = rounded;
+            alert(t('alert_unit_adjust', {curr: sourceCurrency, unit: formatNumber(unit), val: formatNumber(rounded)}));
+        }
+    }
+
+    const rawResult = val * currentDisplayRate;
+    ko.value = formatResult(rawResult) + ' ' + targetCurrency;
+}
+
+// ============================================================
+// 출발 전 / 여행 중 모드 전환
+let currentMode = localStorage.getItem('travelMode') || 'before';
+
+function toggleMode() {
+    const next = currentMode === 'before' ? 'during' : 'before';
+    switchMode(next);
+}
+
+function switchMode(mode) {
+    currentMode = mode;
+    localStorage.setItem('travelMode', mode);
+
+    // 헤더 색상 전환
+    const hdr = document.querySelector('.app-header');
+    if (hdr) {
+        hdr.classList.toggle('mode-during', mode === 'during');
+    }
+
+    // 토글 칩 아이콘·텍스트 업데이트
+    const toggleIcon = document.getElementById('modeToggleIcon');
+    const toggleText = document.getElementById('modeToggleText');
+    if (toggleIcon && toggleText) {
+        if (mode === 'before') {
+            toggleIcon.className = 'fa-solid fa-suitcase-rolling';
+            toggleText.textContent = (I18N[userSelectedLang] || I18N.ko).mode_before || '출발 전';
+        } else {
+            toggleIcon.className = 'fa-solid fa-location-dot';
+            toggleText.textContent = (I18N[userSelectedLang] || I18N.ko).mode_during || '여행 중';
+        }
+    }
+
+    // 섹션 표시
+    document.querySelectorAll('.mode-before').forEach(el => {
+        el.style.display = mode === 'before' ? '' : 'none';
+    });
+    document.querySelectorAll('.mode-during').forEach(el => {
+        el.style.display = mode === 'during' ? '' : 'none';
+    });
+    // 환율/기후 렌더링
+    if (mode === 'before') {
+        renderMonthSelector();
+        renderMonthDetail();
+        updateCalcCurrencies();
+    }
+    updateTipCalcVisibility();
+    updateCalcTabLabel();
+}
+
+function updateCalcTabLabel() {
+    const label = document.getElementById('tabCalcLabel');
+    if (!label) return;
+    const L = userSelectedLang;
+    const dict = I18N[L] || I18N.ko;
+    label.textContent = currentMode === 'before'
+        ? (dict.tab_calc_before || dict.tab_calc)
+        : (dict.tab_calc_during || dict.tab_calc);
+}
+
+// 환율탭 내 탭 전환 (번역기 ↔ 환율계산기)
+// ============================================================
+// ── 출발전 탭: 환율 | 예산 ──
+function switchBeforeTab(tab) {
+    const isExchange = tab === 'exchange';
+    document.getElementById('beforePanelExchange').style.display = isExchange ? '' : 'none';
+    document.getElementById('beforePanelBudget').style.display   = isExchange ? 'none' : '';
+    document.getElementById('beforeTabExchange').classList.toggle('active', isExchange);
+    document.getElementById('beforeTabBudget').classList.toggle('active', !isExchange);
+    if (!isExchange) syncBudgetUnits();
+}
+
+// ── 여행중 탭: 번역기 | 환율 (예산은 항상 표시) ──
+function switchCalcTab(tab) {
+    const isTranslator = tab === 'translator';
+    const tPanel = document.getElementById('calcPanelTranslator');
+    const ePanel = document.getElementById('calcPanelExchange');
+    if (tPanel) tPanel.style.display = isTranslator ? '' : 'none';
+    if (ePanel) ePanel.style.display = isTranslator ? 'none' : '';
+    ['Translator','Exchange'].forEach(t => {
+        const btn = document.getElementById('calcToolTab'+t);
+        if (btn) btn.classList.toggle('active', tab===t.toLowerCase());
+    });
+    if (!isTranslator) updateCalcCurrenciesDuring();
+}
+
+// 여행중 환율 계산기 (During 전용)
+function updateCalcCurrenciesDuring() {
+    const src = COUNTRIES_DATA[currentCountryId]?.currency || 'JPY';
+    const tgt = LANG_TO_CURRENCY[userSelectedLang] || 'KRW';
+    const srcEl = document.getElementById('calcSourceCurrencyDuring');
+    const tgtEl = document.getElementById('calcTargetCurrencyDuring');
+    const unitInfo = document.getElementById('calcUnitInfoDuring');
+    const unitMsg = document.getElementById('calcUnitMsgDuring');
+    if (srcEl) srcEl.textContent = src;
+    if (tgtEl) tgtEl.textContent = tgt;
+    if (unitInfo) unitInfo.style.display = (getUnit(src, tgt) > 1) ? 'flex' : 'none';
+    if (unitMsg) unitMsg.textContent = t('calc_unit_msg', {curr: src, unit: formatNumber(getUnit(src, tgt))});
+}
+
+function calculateExchangeDuring() {
+    const fi = document.getElementById('foreignInputDuring');
+    const ko = document.getElementById('krwOutputDuring');
+    const src = COUNTRIES_DATA[currentCountryId]?.currency || 'JPY';
+    const tgt = LANG_TO_CURRENCY[userSelectedLang] || 'KRW';
+    let val = parseFloat(removeCommas(fi.value));
+    if (!val || isNaN(val)) { alert(t('alert_enter_amount')); return; }
+    const unit = getUnit(src, tgt);
+    if (unit > 1) {
+        let rounded = Math.round(val / unit) * unit;
+        if (rounded === 0) rounded = unit;
+        if (rounded !== val) {
+            fi.value = formatNumber(rounded);
+            val = rounded;
+            alert(t('alert_unit_adjust', {curr: src, unit: formatNumber(unit), val: formatNumber(rounded)}));
+        }
+    }
+    ko.value = formatResult(val * currentDisplayRate) + ' ' + tgt;
+}
+
+// ============================================================
+// 9. 번역기
+// ============================================================
+function updateTranslateButtons() {
+    const cityLang = COUNTRIES_DATA[currentCountryId]?.lang || 'en';
+    const targetBtn = document.getElementById('targetLangBtn');
+    const reverseBtn = document.getElementById('reverseBtn');
+    if (targetBtn) targetBtn.textContent = t('btn_to_local', {lang: LANG_NAMES[cityLang]});
+    if (reverseBtn) reverseBtn.textContent = t('btn_to_ui');
+}
+
+function translateAction(mode) {
+    const text = document.getElementById('sourceText').value;
+    if (!text) { alert(t('alert_empty')); return; }
+    const cityLang = COUNTRIES_DATA[currentCountryId]?.lang || 'en';
+    const targetLang = mode === 'target' ? cityLang : userSelectedLang;
+    fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`)
+        .then(r => r.json())
+        .then(data => {
+            const rb = document.getElementById('transResult');
+            if (data?.[0]?.[0]?.[0]) { rb.innerText = data[0][0][0]; rb.style.display = 'block'; }
+        })
+        .catch(() => alert(t('alert_translate_error')));
+}
+
+// ============================================================
+// 10. 알레르기
+// ============================================================
+function buildAllergySentence(lang, itemText) {
+    const tpl = {
+        ko:`${itemText} 알레르기가 있어요.`, ja:`${itemText}アレルギーがあります。`,
+        vi:`Tôi bị dị ứng ${itemText}.`, th:`ฉันแพ้${itemText}`,
+        'zh-CN':`我对${itemText}过敏。`, 'zh-TW':`我對${itemText}過敏。`, en:`I am allergic to ${itemText}.`
+    };
+    return tpl[lang] || tpl.en;
+}
+
+function updateAllergyPhrase() {
+    const sel = document.getElementById('allergySelector');
+    const koEl = document.getElementById('allergyKoPhrase');
+    const localEl = document.getElementById('allergyLocalPhrase');
+    if (!sel || !koEl || !localEl) return;
+    const vocab = ALLERGY_VOCAB[sel.value];
+    if (!vocab) return;
+    const cityLang = COUNTRIES_DATA[currentCountryId]?.lang || 'en';
+    const uiLang = userSelectedLang || 'ko';
+    koEl.textContent = buildAllergySentence(uiLang, vocab[uiLang] || vocab.en);
+    if (cityLang === uiLang) {
+        localEl.textContent = '';
+        localEl.style.display = 'none';
+    } else {
+        localEl.style.display = '';
+        localEl.textContent = buildAllergySentence(cityLang, vocab[cityLang] || vocab.en);
+    }
+}
+
+// ============================================================
+// 11. 슬라이더 / 탭
+// ============================================================
+function goInfoSlide(index) {
+    const track = document.getElementById('infoSliderTrack');
+    if (!track) return;
+    track.scrollTo({ left: track.clientWidth * index, behavior: 'smooth' });
+    setActiveInfoSlideBtn(index);
+}
+
+function syncInfoSlideNav() {
+    const track = document.getElementById('infoSliderTrack');
+    if (!track) return;
+    setActiveInfoSlideBtn(Math.round(track.scrollLeft / Math.max(track.clientWidth, 1)));
+}
+
+function setActiveInfoSlideBtn(index) {
+    document.querySelectorAll('#infoSliderNav .info-slider-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === index);
+    });
+}
+
+function showTab(event, id) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+function showPhraseTab(event, id) {
+    document.querySelectorAll('#phraseContents .phrase-tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#phraseTabs .phrase-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+function showShoppingTab(event, id) {
+    document.querySelectorAll('#shoppingContents .phrase-tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#shoppingTabs .phrase-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+// ============================================================
+// 12. 유틸
+// ============================================================
+function formatNumber(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function removeCommas(s) { return s.replace(/,/g, ''); }
+
+// ============================================================
+// 13. 초기화
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    // 언어 선택기 복원
+    const langSel = document.getElementById('langSelector');
+    if (langSel) langSel.value = userSelectedLang;
+
+    // 도시 선택기 설정
+    const citySel = document.getElementById('countrySelector');
+    if (citySel) citySel.value = currentCountryId;
+
+    // 콘텐츠 렌더링
+    const data = COUNTRIES_DATA[currentCountryId];
+    if (data) { sourceCurrency = data.currency; renderCityContent(data); fetchWeather(data.lat, data.lon, data.city); }
+    renderChecklist();
+    renderEmergency(currentCountryId);
+    updateTipCalcVisibility();
+    renderMonthSelector();
+    renderMonthDetail();
+
+    // 환율 입력 포맷
+    const fi = document.getElementById('foreignInput');
+    if (fi) fi.addEventListener('input', function(e) {
+        let v = removeCommas(e.target.value);
+        if (v && !isNaN(v)) e.target.value = formatNumber(v);
+    });
+
+    // 팁 계산기 입력 이벤트
+    const ti = document.getElementById('tipBillInput');
+    if (ti) ti.addEventListener('input', function(e) {
+        let v = removeCommas(e.target.value);
+        if (v && !isNaN(v)) e.target.value = formatNumber(v);
+        calcTip();
+    });
+
+    // i18n 적용
+    applyI18n();
+    updateTranslateButtons();
+    renderAllergySelector();
+    updateAllergyPhrase();
+    updateCalcCurrencies();
+    updateRateDisplay();
+    syncInfoSlideNav();
+    switchMode(currentMode);
+    updateCalcTabLabel();
+
+    // 여행중 환율 계산기 입력 포맷
+    const fiD = document.getElementById('foreignInputDuring');
+    if (fiD) fiD.addEventListener('input', function(e) {
+        let v = removeCommas(e.target.value);
+        if (v && !isNaN(v)) e.target.value = formatNumber(v);
+    });
+});
+
+// ============================================================
+// Gemini AI 일정 플래너
+// ============================================================
+let plannerDays = 2;
+let plannerPace = 'loose';
+
+function plannerDayChange(delta) {
+    plannerDays = Math.max(1, Math.min(10, plannerDays + delta));
+    document.getElementById('plannerDayCount').textContent = plannerDays;
+    const label = document.getElementById('plannerNightsLabel');
+    if (label) label.textContent = `(${plannerDays + 1}일)`;
+}
+
+function setPace(pace) {
+    plannerPace = pace;
+    document.getElementById('paceLoose').classList.toggle('active', pace === 'loose');
+    document.getElementById('paceTight').classList.toggle('active', pace === 'tight');
+}
+
+function resetPlanner() {
+    currentPlan = null;
+    currentHotel = '';
+    try {
+        localStorage.removeItem('savedPlan');
+        localStorage.removeItem('savedHotel');
+    } catch(e) { console.warn('저장된 플랜 삭제 실패:', e); }
+    document.getElementById('plannerResult').style.display = 'none';
+    document.getElementById('plannerError').style.display = 'none';
+    document.getElementById('plannerGenerateBtn').style.display = '';
+    document.querySelector('.planner-form').style.display = '';
+    const bi = document.getElementById('plannerBudgetInput');
+    if (bi) bi.value = '';
+    const defaultBtn = document.querySelector('.budget-preset-btn[data-val=""]');
+    if (defaultBtn) selectBudgetPreset(defaultBtn, '');
+}
+
+async function generatePlan() {
+    const hotel = document.getElementById('plannerHotel').value.trim();
+    if (!hotel) {
+        document.getElementById('plannerError').style.display = '';
+        document.getElementById('plannerError').textContent = '숙소명을 입력해주세요.';
+        return;
+    }
+
+    // UI 로딩 상태
+    document.querySelector('.planner-form').style.display = 'none';
+    document.getElementById('plannerGenerateBtn').style.display = 'none';
+    document.getElementById('plannerResult').style.display = 'none';
+    document.getElementById('plannerError').style.display = 'none';
+    document.getElementById('plannerLoading').style.display = '';
+    document.getElementById('plannerLoadingText').textContent = '주변 맛집 정보 가져오는 중...';
+
+    const cityData = COUNTRIES_DATA[currentCountryId];
+    const cityName = cityData ? cityData.name : currentCountryId;
+    const currency = cityData ? cityData.currency : '';
+    const today = new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'long', day:'numeric'});
+    const paceDesc = plannerPace === 'tight'
+        ? '아침 일찍부터 저녁 늦게까지 최대한 많은 명소를 방문하는 빡빡한 일정'
+        : '오전 느지막이 출발하고 각 장소에서 여유롭게 머무는 느슨한 일정';
+
+    // 1. Places API에서 식당 + 스파 목록 병렬 요청
+    let restaurantSection = '';
+    let spaSection = '';
+    try {
+        const [rRes, sRes] = await Promise.all([
+            fetch(`/api/restaurants/${currentCountryId}`),
+            fetch(`/api/spas/${currentCountryId}`)
+        ]);
+        const rData = await rRes.json();
+        const sData = await sRes.json();
+
+        if (rData.restaurants && rData.restaurants.length > 0) {
+            const rList = rData.restaurants.map(r =>
+                `- ${r.name} (평점 ${r.rating}⭐, 리뷰 ${r.reviews}개, 위치: ${r.vicinity})`
+            ).join('\n');
+            restaurantSection = `\n\n【실제 식당 목록 - Google Places 데이터】\n식사 일정은 반드시 아래 목록에서 선택하세요:\n${rList}`;
+        }
+        if (sData.spas && sData.spas.length > 0) {
+            const price_label = ['무료','저렴','보통','고급','최고급'];
+            const sList = sData.spas.map(s =>
+                `- ${s.name} (평점 ${s.rating}⭐, 리뷰 ${s.reviews}개, 가격대: ${price_label[s.price_level]||'보통'}, 위치: ${s.vicinity})`
+            ).join('\n');
+            spaSection = `\n\n【실제 스파/마사지 목록 - Google Places 데이터】\n스파/마사지 일정은 반드시 아래 목록에서 선택하세요 (사전 예약 권장):\n${sList}`;
+        }
+    } catch(e) {
+        console.warn('Places API 실패, Gemini 자체 추천으로 진행:', e);
+    }
+
+    // 날씨 정보 수집
+    let weatherNote = '';
+    try {
+        const cityData2 = COUNTRIES_DATA[currentCountryId];
+        if (cityData2 && cityData2.city) {
+            const wRes = await fetch(`/api/weather/${cityData2.city}`);
+            const wData = await wRes.json();
+            if (wData.temp !== '-') {
+                currentWeatherDesc = `${wData.desc} ${wData.temp}°C`;
+                weatherNote = `\n현재 날씨: ${currentWeatherDesc}. 비/소나기라면 실내 위주로, 맑으면 야외 명소 중심으로 일정을 조정하세요.`;
+            }
+        }
+    } catch(e) { console.warn('일정 생성용 날씨 조회 실패(무시하고 진행):', e); }
+
+    document.getElementById('plannerLoadingText').textContent = 'Gemini가 일정을 짜고 있어요...';
+
+    // 2. Gemini에 식당 목록 포함해서 일정 생성
+    // 예산 조건 생성
+    const budgetVal = document.getElementById('plannerBudgetInput').value.trim();
+    const budgetPreset = document.querySelector('.budget-preset-btn.active')?.dataset.val || '';
+    let budgetNote = '';
+    if (budgetVal && parseFloat(budgetVal) > 0) {
+        budgetNote = `\n1일 예산: ${Number(budgetVal).toLocaleString()} ${currency} 이내 — 식사, 교통, 관광 합산이 이 금액을 초과하지 않도록 일정을 구성하세요.`;
+    } else if (budgetPreset === 'low') {
+        budgetNote = `\n예산 수준: 절약 — 무료 명소, 현지 서민 식당, 대중교통 위주로 구성하세요. 입장료가 비싼 곳은 피하고 로컬 시장, 공원, 무료 사원 등을 우선하세요.`;
+    } else if (budgetPreset === 'mid') {
+        budgetNote = `\n예산 수준: 보통 — 합리적인 가격대의 맛집과 주요 유료 관광지를 균형있게 포함하세요.`;
+    } else if (budgetPreset === 'high') {
+        budgetNote = `\n예산 수준: 여유 — 분위기 좋은 레스토랑, 프리미엄 관광 경험(루프탑 바, 야경 전망대, 스파 등)을 적극적으로 포함하세요.`;
+    }
+
+    const prompt = `당신은 ${cityName} 여행 전문 플래너입니다.
+오늘 날짜: ${today}
+숙소: ${hotel}
+여행 일수: ${plannerDays}박 ${plannerDays + 1}일
+일정 강도: ${paceDesc}${budgetNote}
+${restaurantSection}${spaSection}
+
+위 조건에 맞춰 최적 동선으로 매일의 여행 일정을 짜주세요.
+
+【필수 규칙】
+1. 동선 최적화: 하루 안에 방문하는 장소들은 이동 거리가 최소화되도록 지리적으로 인접한 순서로 배치하세요. 멀리 떨어진 장소를 왔다갔다 하지 마세요.
+2. 장소 구체화: "현지 스파", "야시장 근처 식당" 같은 모호한 표현 금지. 반드시 실제 장소명(고유명사)을 사용하세요.
+3. 스파/마사지: 위 제공된 스파 목록에서 반드시 선택하세요. 목록이 없으면 구체적인 실제 업체명을 명시하세요.
+4. 식사: 위 제공된 식당 목록에서 선택. 같은 식당 하루 2회 이상 금지.
+5. 숙소 동선: 첫날 출발·마지막날 귀환은 숙소 기준. 숙소에서 먼 곳은 당일 묶어서 배치.
+6. 이동: 각 이동 항목에 교통수단(도보/택시/그랩/버스) 명시.
+${currency ? `7. 비용: 현지 통화(${currency}) 기준 각 항목 예상 비용 포함.` : ''}
+${budgetNote ? '8. 예산 준수: 예산 조건을 엄격히 지키세요. 비싼 활동 대신 가성비 대안을 우선하세요.' : ''}
+${weatherNote ? `9. 날씨 반영: ${weatherNote}` : ''}
+
+JSON 형식으로만 응답 (마크다운/백틱/설명 텍스트 없이 순수 JSON만):
+{
+  "title": "일정 제목",
+  "days": [
+{
+  "day": 1,
+  "label": "1일차",
+  "schedules": [
+    {"time": "09:00", "place": "장소명(고유명사)", "desc": "15자 이내 설명", "type": "move|eat|spot|hotel"}
+  ]
+}
+  ]
+}`;
+
+    try {
+        // 일정 생성은 서버(/api/plan)를 통해 호출한다. Gemini 키는 서버에만 존재.
+        const res = await fetch('/api/plan', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({prompt})
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        const raw = data.text || '';
+        if (!raw) throw new Error('응답이 비어있습니다');
+        let clean = raw.trim();
+        clean = clean.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '');
+        clean = clean.replace(/^json\s*/i, '').trim();
+        const plan = JSON.parse(clean);
+        renderPlan(plan, hotel);
+    } catch(e) {
+        console.error('Gemini error:', e);
+        document.getElementById('plannerLoading').style.display = 'none';
+        document.querySelector('.planner-form').style.display = '';
+        document.getElementById('plannerGenerateBtn').style.display = '';
+        document.getElementById('plannerError').style.display = '';
+        document.getElementById('plannerError').textContent = '오류: ' + (e.message || '알 수 없는 오류');
+    }
+}
+
+// 전역 plan 저장 (PDF/지도/공유에서 사용)
+// localStorage에서 복원해 다른 페이지 갔다 와도 유지
+let currentPlan = null;
+let currentHotel = '';
+try {
+    const saved = localStorage.getItem('savedPlan');
+    if (saved) currentPlan = JSON.parse(saved);
+    currentHotel = localStorage.getItem('savedHotel') || '';
+} catch(e) { console.warn('저장된 플랜 복원 실패:', e); }
+
+function renderPlan(plan, hotel) {
+    currentPlan = plan;
+    currentHotel = hotel;
+    // 다른 페이지 갔다 와도 유지되도록 저장
+    try {
+        localStorage.setItem('savedPlan', JSON.stringify(plan));
+        localStorage.setItem('savedHotel', hotel);
+    } catch(e) { console.warn('플랜 저장 실패:', e); }
+    document.getElementById('plannerLoading').style.display = 'none';
+    document.getElementById('plannerResult').style.display = '';
+    document.getElementById('plannerResultTitle').textContent = plan.title || '여행 일정';
+
+
+    syncBudgetUnits();
+
+    const typeIcon = {
+        move: '<i class="fa-solid fa-route" style="color:#888"></i>',
+        eat:  '<i class="fa-solid fa-utensils" style="color:#e88"></i>',
+        spot: '<i class="fa-solid fa-camera" style="color:#58a"></i>',
+        hotel:'<i class="fa-solid fa-hotel" style="color:#a85"></i>',
+    };
+
+    const weatherBadge = currentWeatherDesc
+        ? `<div class="weather-badge"><i class="fa-solid fa-cloud-sun"></i> 현재 ${currentWeatherDesc} — ${
+            currentWeatherDesc.includes('비') || currentWeatherDesc.includes('소나기')
+            ? '☂️ 우산 챙기세요!' : '☀️ 좋은 날씨예요'}</div>`
+        : '';
+
+    const days = plan.days || [];
+
+    // ── 날짜 탭 생성 ──
+    const tabBar = `<div class="plan-day-tabs" id="planDayTabs">
+        ${days.map((day, i) => `
+            <button class="plan-day-tab ${i === 0 ? 'active' : ''}"
+                onclick="switchDayTab(${i})" id="planTab_${i}">
+                ${day.label || ('Day ' + day.day)}
+            </button>`).join('')}
+    </div>`;
+
+    // ── 각 날짜 패널 ──
+    const cityData2 = COUNTRIES_DATA[currentCountryId];
+    const cityNameForMap = cityData2 ? cityData2.city : '';
+
+    const panels = days.map((day, i) => `
+        <div class="plan-day-panel ${i === 0 ? 'active' : ''}" id="planPanel_${i}">
+            <div class="plan-schedules">
+                ${(day.schedules || []).map(s => {
+                    const canMap = s.type !== 'move';
+                    const query = encodeURIComponent(`${s.place} ${cityNameForMap}`);
+                    const mapUrl = `https://maps.google.com/maps?q=${query}`;
+                    return `
+                <div class="plan-item ${canMap ? 'plan-item-mappable' : ''}"
+                     ${canMap ? `onclick="openPlaceMap('${mapUrl}')"` : ''}>
+                    <div class="plan-time">${s.time || ''}</div>
+                    <div class="plan-dot"></div>
+                    <div class="plan-info">
+                        <div class="plan-place">${typeIcon[s.type] || typeIcon.spot} ${s.place}${canMap ? ' <span class="map-pin-badge"><i class="fa-solid fa-map-pin"></i></span>' : ''}</div>
+                        <div class="plan-desc">${s.desc || ''}</div>
+                    </div>
+                    ${canMap ? '<div class="plan-map-arrow"><i class="fa-solid fa-chevron-right"></i></div>' : ''}
+                </div>`;
+                }).join('')}
+            </div>
+        </div>`).join('');
+
+    document.getElementById('plannerResultContent').innerHTML = weatherBadge + tabBar + panels;
+}
+
+function switchDayTab(idx) {
+    document.querySelectorAll('.plan-day-tab').forEach((t, i) => {
+        t.classList.toggle('active', i === idx);
+    });
+    document.querySelectorAll('.plan-day-panel').forEach((p, i) => {
+        p.classList.toggle('active', i === idx);
+    });
+}
+
+// ── 예산 계산기 ──
+// openBudget 제거 - 예산은 날씨·환율 탭으로 이동
+
+// 예산 프리셋 (도시별 절약/보통/여유 기준금액)
+const BUDGET_PRESETS = {
+    tokyo:     {low:8000,  mid:20000, high:50000},
+    osaka:     {low:7000,  mid:18000, high:45000},
+    fukuoka:   {low:6000,  mid:15000, high:40000},
+    danang:    {low:300000,mid:700000,high:1500000},
+    hochiminh: {low:300000,mid:700000,high:1500000},
+    bangkok:   {low:600,   mid:1500,  high:3500},
+    taipei:    {low:800,   mid:2000,  high:5000},
+    hongkong:  {low:200,   mid:600,   high:1500},
+    nyc:       {low:80,    mid:180,   high:400},
+    seoul:     {low:50000, mid:120000,high:300000},
+};
+let selectedBudgetPreset = '';
+
+function selectBudgetPreset(btn, val) {
+    document.querySelectorAll('.budget-preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedBudgetPreset = val;
+    const input = document.getElementById('plannerBudgetInput');
+    if (!input) return;
+    if (val === '') {
+        input.value = '';
+        input.placeholder = '직접 입력 (선택)';
+    } else {
+        const preset = BUDGET_PRESETS[currentCountryId];
+        if (preset && preset[val]) {
+            input.value = '';
+            const cur = COUNTRIES_DATA[currentCountryId]?.currency || '';
+            input.placeholder = `약 ${preset[val].toLocaleString()} ${cur} 수준`;
+        }
+    }
+}
+function onBudgetInputChange() {
+    if (document.getElementById('plannerBudgetInput').value.trim()) {
+        document.querySelectorAll('.budget-preset-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.budget-preset-btn[data-val=""]')?.classList.add('active');
+        selectedBudgetPreset = '';
+    }
+}
+function updatePlannerBudgetCurrency() {
+    const cur = COUNTRIES_DATA[currentCountryId]?.currency || '';
+    const el = document.getElementById('plannerBudgetCurrency');
+    if (el) el.textContent = cur ? `(${cur})` : '';
+    // 플레이스홀더 업데이트
+    selectBudgetPreset(
+        document.querySelector('.budget-preset-btn.active') || document.querySelector('.budget-preset-btn'),
+        selectedBudgetPreset
+    );
+}
+
+function syncBudgetUnits() {
+    const cur = COUNTRIES_DATA[currentCountryId]?.currency || 'KRW';
+    ['bUnit1','bUnit2','bUnit3','bUnit4','bUnit5'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = cur;
+    });
+    calcBudget();
+    updatePlannerBudgetCurrency();
+}
+function syncBudgetUnitsD() {
+    const cur = COUNTRIES_DATA[currentCountryId]?.currency || 'KRW';
+    ['bUnit1D','bUnit2D','bUnit3D','bUnit4D','bUnit5D'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = cur;
+    });
+    calcBudgetD();
+}
+function calcBudget() {
+    const cur = COUNTRIES_DATA[currentCountryId]?.currency || 'KRW';
+    const total = ['budgetHotel','budgetFood','budgetTrans','budgetTour','budgetShop']
+        .reduce((s,id) => s + (parseFloat(document.getElementById(id)?.value)||0), 0);
+    const el = document.getElementById('budgetTotal');
+    if (el) el.innerHTML = `합계: <b>${total.toLocaleString()} ${cur}</b>`;
+}
+function calcBudgetD() {
+    const cur = COUNTRIES_DATA[currentCountryId]?.currency || 'KRW';
+    const total = ['budgetHotelD','budgetFoodD','budgetTransD','budgetTourD','budgetShopD']
+        .reduce((s,id) => s + (parseFloat(document.getElementById(id)?.value)||0), 0);
+    const el = document.getElementById('budgetTotalD');
+    if (el) el.innerHTML = `합계: <b>${total.toLocaleString()} ${cur}</b>`;
+}
+
+// ── 지도 연동 ──
+// 개별 장소 지도 열기
+function openPlaceMap(url) {
+    // 모바일에서 앱 선택창(플레이스토어) 거치지 않고 브라우저로 바로 이동
+    location.href = url;
+}
+
+// 전체 경로 보기 버튼
+function openMapView() {
+    if (!currentPlan) return;
+    const mp = document.getElementById('mapPanel');
+    if (mp.style.display !== 'none') { mp.style.display = 'none'; return; }
+
+    const cityData = COUNTRIES_DATA[currentCountryId];
+    const cityName = cityData ? cityData.city : '';
+
+    // 현재 보이는 탭 기준 장소 수집
+    const activePanel = document.querySelector('.plan-day-panel.active');
+    const activeDayIdx = activePanel ? activePanel.id.replace('planPanel_','') : 0;
+    const day = (currentPlan.days || [])[activeDayIdx] || {};
+    const places = (day.schedules || [])
+        .filter(s => s.type !== 'move')
+        .map(s => s.place);
+
+    if (places.length === 0) return;
+
+    const waypoints = places.map(p => encodeURIComponent(p + ' ' + cityName));
+    const routeUrl = `https://www.google.com/maps/dir/${waypoints.join('/')}`;
+
+    document.getElementById('mapLinks').innerHTML =
+        `<a class="map-route-btn" href="${routeUrl}" target="_blank">
+            <i class="fa-solid fa-route"></i> 이 날 전체 경로 구글맵에서 보기
+        </a>
+        <p style="font-size:.8rem;color:#888;margin:8px 4px 0">💡 각 일정 항목을 탭하면 해당 장소 지도가 바로 열려요</p>`;
+    mp.style.display = '';
+}
+
+// ── PDF 저장 ──
+function savePDF() {
+    if (!currentPlan) return;
+    const title = currentPlan.title || '여행일정';
+    const printWin = window.open('', '_blank');
+    const rows = (currentPlan.days || []).map(day =>
+        `<h3 style="color:#7c5cfc;margin:16px 0 8px">${day.label}</h3>` +
+        (day.schedules || []).map(s =>
+            `<div style="display:flex;gap:12px;padding:6px 0;border-bottom:1px solid #eee">
+                <span style="color:#888;min-width:48px;font-size:.9rem">${s.time||''}</span>
+                <span>${s.place}</span>
+                <span style="color:#aaa;font-size:.85rem">${s.desc||''}</span>
+            </div>`
+        ).join('')
+    ).join('');
+
+    printWin.document.write(`<!DOCTYPE html><html><head>
+        <meta charset="utf-8">
+        <title>${title}</title>
+        <style>body{font-family:'Malgun Gothic',sans-serif;padding:32px;max-width:700px;margin:0 auto}
+        h1{color:#7c5cfc}@media print{button{display:none}}</style>
+    </head><body>
+        <h1>✈️ ${title}</h1>
+        <p style="color:#888">숙소: ${currentHotel} | 생성일: ${new Date().toLocaleDateString('ko-KR')}</p>
+        ${rows}
+        <br><button onclick="window.print()" style="background:#7c5cfc;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:1rem">🖨️ PDF로 저장</button>
+    </body></html>`);
+    printWin.document.close();
+}
+
+// ── 카카오톡 공유 ──
+function shareKakao() {
+    if (!currentPlan) return;
+    const title = currentPlan.title || '여행 일정';
+    const cityData = COUNTRIES_DATA[currentCountryId];
+    const cityName = cityData ? cityData.name : '';
+    const days = (currentPlan.days || []).map(d => {
+        const spots = (d.schedules||[]).filter(s=>s.type==='spot'||s.type==='eat').map(s=>s.place).join(', ');
+        return `${d.label}: ${spots}`;
+    }).join('\n');
+
+    const text = `✈️ ${title}\n🏨 숙소: ${currentHotel}\n📍 ${cityName}\n\n${days}\n\n#TourGuide #여행일정`;
+    const kakaoUrl = `https://open.kakao.com/o/share?text=${encodeURIComponent(text)}`;
+
+    // 카카오 SDK 없으면 클립보드 복사로 대체
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('📋 일정이 클립보드에 복사됐어요!\n카카오톡에 붙여넣기 하세요.');
+        });
+    } else {
+        window.open(kakaoUrl, '_blank');
+    }
+}
+
+// 현재 날씨 정보 (날씨기반 일정 조정용)
+let currentWeatherDesc = '';
+let currentRate = null;
+
+// 환율 정보 - 기존 환율 표시 데이터에서 가져오기
+function loadExchangeRate() {
+    try {
+        const cityData = COUNTRIES_DATA[currentCountryId];
+        if (!cityData) return;
+        // COUNTRIES_DATA의 rate 필드 활용 (data.js에 있는 경우)
+        if (cityData.rate) { currentRate = cityData.rate; return; }
+        // 없으면 환율 표시 element에서 읽기
+        const rateEl = document.getElementById('currencyRate');
+        if (rateEl) {
+            const match = rateEl.textContent.match(/([\d,.]+)/);
+            if (match) currentRate = parseFloat(match[1].replace(/,/g,''));
+        }
+    } catch(e) { console.warn('환율 표시값 파싱 실패:', e); }
+}
+document.addEventListener('DOMContentLoaded', () => {
+    loadExchangeRate();
+    syncBudgetUnits();
+    syncBudgetUnitsD();
+
+    // 저장된 플랜이 있으면 자동 복원
+    if (currentPlan) {
+        try {
+            document.querySelector('.planner-form').style.display = 'none';
+            document.getElementById('plannerGenerateBtn').style.display = 'none';
+            renderPlan(currentPlan, currentHotel);
+        } catch(e) {
+            // 복원 실패 시 초기화
+            currentPlan = null;
+            localStorage.removeItem('savedPlan');
+            localStorage.removeItem('savedHotel');
+        }
+    }
+});
+
+// 스크롤 시 mobile-tabs 그림자 강화
+window.addEventListener('scroll', function() {
+    const tabs = document.querySelector('.mobile-tabs');
+    if (tabs) {
+        tabs.style.boxShadow = window.scrollY > 10
+            ? '0 4px 16px rgba(0,0,0,0.18)'
+            : '0 2px 10px rgba(0,0,0,0.1)';
+    }
+}, { passive: true });
+
